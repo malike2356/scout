@@ -1,6 +1,10 @@
 # Multi-stage production image for Scout Engine (SaaS)
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
+# Skip Chromium download during image build (hangs/slow on some hosts).
+# PDF/report features that need Puppeteer can install Chrome at runtime if required.
+ENV PUPPETEER_SKIP_DOWNLOAD=1
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=1
 RUN corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --dangerously-allow-all-builds 2>/dev/null \

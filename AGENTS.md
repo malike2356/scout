@@ -4,7 +4,7 @@
 
 Before any commit or push to GitHub, track **only files that make this product work**. Planning docs, prompt queues, competitor research, personal notes, runtime logs, secrets, and nested foreign product trees stay workstation-local (`.gitignore` + `git rm --cached`). Canonical rule: `/opt/lampp/htdocs/verlox/shared/workspace-governance/PUBLIC-GITHUB-HYGIENE.md` and `/opt/lampp/htdocs/verlox/.cursor/rules/public-github-hygiene.mdc`. Guard: `bash /opt/lampp/htdocs/verlox/scripts/guard-public-github-hygiene.sh`.
 
-This tree may not have its own git root yet. When it does, enforce the hygiene rule before the first push.
+Git root: this directory (`origin` → `https://github.com/malike2356/scout`, private). Enforce the hygiene rule before every push.
 
 ## Repository secret scanning boundary
 

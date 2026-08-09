@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: Scout Engine API
+  version: 1.0.0
+  description: REST API for Scout scanning, findings, score, alerts, and compliance.
+servers:
+  - url: /api/v1
+security:
+  - ScoutApiKey: []
+paths:
+  /health:
+    get:
+      summary: Health check
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+  /auth/token:
+    post:
+      summary: Exchange API key for JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [api_key]
+              properties:
+                api_key:
+                  type: string
+                workspace_id:
+                  type: string
+      responses:
+        '200':
+          description: JWT issued
+  /targets:
+    get:
+      summary: List scan targets
+      responses:
+        '200':
+          description: Target list
+    post:
+      summary: Register a scan target
+      responses:
+        '201':
+          description: Target created
+  /targets/{id}/scan:
+    post:
+      summary: Trigger manual scan
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Scan started
+  /findings:
+    get:
+      summary: List findings
+      responses:
+        '200':
+          description: Findings page
+  /findings/{id}:
+    get:
+      summary: Get finding details
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Finding detail
+  /scout-score:
+    get:
+      summary: Current Scout Score
+      responses:
+        '200':
+          description: Score breakdown
+  /scout-score/history:
+    get:
+      summary: Score history
+      responses:
+        '200':
+          description: Time series
+  /agents:
+    get:
+      summary: List connected agents
+      responses:
+        '200':
+          description: Agent list
+  /alerts/rules:
+    get:
+      summary: List alert rules
+      responses:
+        '200':
+          description: Alert rules
+  /compliance/score:
+    get:
+      summary: SOC2 compliance score
+      responses:
+        '200':
+          description: Compliance score
+components:
+  securitySchemes:
+    ScoutApiKey:
+      type: apiKey
+      in: header
+      name: X-Scout-Key

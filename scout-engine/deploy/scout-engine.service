@@ -1,0 +1,23 @@
+; User systemd unit - install on VPS:
+;   mkdir -p ~/.config/systemd/user
+;   cp scout-engine.service ~/.config/systemd/user/scout-engine.service
+;   systemctl --user daemon-reload
+;   systemctl --user enable --now scout-engine
+; Boot without login: sudo loginctl enable-linger malike
+; Or run once: bash /home/malike/apps/scout-engine/deploy/enable-boot.sh
+[Unit]
+Description=Scout Engine (Labyrinth Scout)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/malike/apps/scout-engine
+Environment=NODE_ENV=production
+EnvironmentFile=-/home/malike/apps/scout-engine/.env
+ExecStart=/usr/bin/node /home/malike/apps/scout-engine/dist/server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

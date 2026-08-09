@@ -1,0 +1,516 @@
+{
+  "patterns": [
+    {
+      "id": "INJ-A01",
+      "pattern": "ignore\\s*(all\\s*)?(previous|above|prior|earlier)\\s*instructions",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Classic ignore-prior-instructions attack.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-A02",
+      "pattern": "disregard\\s*(all\\s*)?(previous|prior|above|your)\\s*(instructions|rules|guidelines|constraints|training)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Disregard variant.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-A03",
+      "pattern": "forget\\s*(everything|all|your|the)\\s*(above|previous|prior|you were told|instructions|rules|constraints)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Forget-prior-context attack.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-A04",
+      "pattern": "your\\s*(new|real|true|actual|updated|revised)\\s*(instructions?|prompt|task|objective|goal|mission)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Replacement instruction framing.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-A05",
+      "pattern": "override\\s*(the\\s*)?(system|previous|prior|all)\\s*(prompt|instructions?|rules?|guidelines?)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Explicit system prompt override.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-A06",
+      "pattern": "from\\s*now\\s*on[,.]?\\s*(you (are|will|must|should)|always|never|do not|ignore)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Persistent instruction override attempt.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-B01",
+      "pattern": "you\\s*(are|must act as|should act as|will now be)\\s*(a\\s*)?(different|new|unrestricted|unconstrained|unfiltered|free)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Direct role replacement.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-B02",
+      "pattern": "pretend\\s*(you are|to be|that you are|you're)\\s*(an?\\s*)?(ai|assistant|model|system|bot)\\s*(without|that has no|with no)\\s*(restrictions?|limitations?|rules?|filters?|guidelines?)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Unrestricted persona hijack.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-B03",
+      "pattern": "\\bDAN\\b|\\bJAILBREAK\\b|\\bDEV\\s*MODE\\b|\\bGOD\\s*MODE\\b|\\bMAINTENANCE\\s*MODE\\b|\\bDEBUG\\s*MODE\\b",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Named jailbreak persona (DAN, Developer Mode, God Mode, etc.).",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-B04",
+      "pattern": "act\\s*as\\s*(if\\s*)?(you\\s*(have|had)\\s*(no|zero|unlimited)\\s*(restrictions?|rules?|limitations?|filters?|alignment)|an?\\s*unfiltered|an?\\s*unrestricted)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "No-restrictions persona.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-B05",
+      "pattern": "your\\s*(true|real|hidden|inner|actual|original)\\s*(self|personality|purpose|identity|nature|capabilities)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Hidden-self social engineering.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-C01",
+      "pattern": "in\\s*(a\\s*)?(fictional|hypothetical|imaginary|alternate|simulated|virtual)\\s*(scenario|world|universe|setting|context|reality)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Fictional framing to bypass restrictions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-C02",
+      "pattern": "(for\\s*(a\\s*)?(novel|book|story|screenplay|script|game|research|academic|educational)\\s*(I am|I'm|we are|we're)?\\s*writing|as\\s*(a\\s*)?writing\\s*exercise)",
+      "flags": "i",
+      "severity": "warning",
+      "description": "Creative-writing bypass framing.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-C03",
+      "pattern": "roleplay\\s*(as|that you are|you're)\\s*(a\\s*)?(system|ai|assistant|model|bot|character)\\s*(that|who|which)\\s*(can|will|does|has no)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Roleplay persona bypass.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-C04",
+      "pattern": "let'?s\\s*play\\s*(a\\s*)?(game|scenario|roleplay|simulation)\\s*where\\s*(you|we)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Game-framing jailbreak.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-C05",
+      "pattern": "this\\s*is\\s*(just\\s*)?(a\\s*)?(test|simulation|training|demonstration|example|exercise)\\s*(so\\s*)?(you\\s*(can|should|must)|ignore)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Test-mode bypass.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-D01",
+      "pattern": "(print|repeat|output|show|reveal|display|write|return|tell me)\\s*(your\\s*)?(system\\s*prompt|initial\\s*instructions?|original\\s*prompt|first\\s*message|hidden\\s*prompt|base\\s*prompt)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "System prompt exfiltration attempt.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-D02",
+      "pattern": "(send|post|fetch|curl|request|http|upload|transmit)\\s*(to\\s*)?(https?:\\/\\/|ftp:\\/\\/|\\bthe\\s*url\\b|\\bmy\\s*server\\b|\\bwebhook\\b)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Active exfiltration via HTTP/FTP.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-D03",
+      "pattern": "what\\s*(is|are|does|contains?)\\s*(your\\s*)?(env(ironment)?\\s*(var(iable)?s?)?|api\\s*key|secret|token|config|credential|password)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Credential/config exfiltration.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-D04",
+      "pattern": "(encode|base64|hex|rot13|obfuscat)\\s*(and\\s*)?(send|transmit|output|print|return)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Encoded exfiltration attempt.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-D05",
+      "pattern": "ACTUAL INSTRUCTIONS|REAL TASK|TRUE GOAL|HIDDEN OBJECTIVE|SECRET PROMPT|SYSTEM INSTRUCTION",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Hidden instruction marker in retrieved content.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-E01",
+      "pattern": "<\\|im_start\\||<\\|im_end\\||<\\|endoftext\\||<\\|system\\|>",
+      "severity": "critical",
+      "description": "ChatML / model control token injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-E02",
+      "pattern": "\\[INST\\]|\\[/INST\\]|<<SYS>>|<</SYS>>",
+      "severity": "critical",
+      "description": "Llama instruction token injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-E03",
+      "pattern": "<\\|.*?\\|>",
+      "severity": "high",
+      "description": "Generic model control token pattern.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-E04",
+      "pattern": "###\\s*(System|Human|Assistant|User|Instruction|Input|Output)\\s*:",
+      "flags": "i",
+      "severity": "high",
+      "description": "Markdown chat format delimiter injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-E05",
+      "pattern": "</?(system|instruction|prompt|assistant|human|user|context)>",
+      "flags": "i",
+      "severity": "critical",
+      "description": "XML-style system delimiter injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-F01",
+      "pattern": "[A-Za-z0-9+/]{80,}={0,2}",
+      "severity": "warning",
+      "description": "Long base64 blob - potential encoded instruction payload.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-F02",
+      "pattern": "\\\\u[0-9A-Fa-f]{4}(\\\\u[0-9A-Fa-f]{4}){4,}",
+      "severity": "high",
+      "description": "Dense unicode escape sequence obfuscation.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-F03",
+      "pattern": "[\\u200B-\\u200D\\uFEFF\\u2060\\u00AD\\u034F]",
+      "severity": "high",
+      "description": "Zero-width or invisible character obfuscation.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-F04",
+      "pattern": "[\\u0430\\u0435\\u043E\\u0440\\u0441\\u0443\\u0445\\u0456]",
+      "severity": "warning",
+      "description": "Cyrillic lookalike homoglyphs (a, e, o, r, s, u, x, i).",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-F05",
+      "pattern": "(base64|hex|rot13|caesar|url.?encod|percent.?encod)\\s*(decode|the following|this|below)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Request to decode obfuscated payload.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-G01",
+      "pattern": "<!--.*?(ignore|override|system|instructions?|prompt|task|forget|disregard).*?-->",
+      "flags": "is",
+      "severity": "critical",
+      "description": "Hidden HTML comment carrying prompt injection.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-G02",
+      "pattern": "<(script|style|meta|link|iframe|object|embed|form|input)[^>]*>",
+      "flags": "i",
+      "severity": "high",
+      "description": "Active HTML tags in scraped content that could be executed.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-G03",
+      "pattern": "data:\\s*text/html|javascript:\\s*\\w",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Data URI or javascript: URI that could execute code.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-H01",
+      "pattern": "\\[SYSTEM\\]|\\[ASSISTANT\\]|\\[INST\\]|\\[PROMPT\\]|\\[OVERRIDE\\]",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Bracket-wrapped instruction markers in retrieved content.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-H02",
+      "pattern": "Note (to|for) (the|AI|assistant|model|system|language model|LLM):",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Embedded note-to-AI injection in retrieved content.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-H03",
+      "pattern": "AI assistant[,:]?\\s*(please|you must|you should|you are instructed to|ignore|forget|disregard)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Direct AI address in retrieved content.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-H04",
+      "pattern": "https?:\\/\\/[^\\s\"'<>]+\\s*->\\s*https?:\\/\\/",
+      "severity": "warning",
+      "description": "URL redirect chain in retrieved content.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-H05",
+      "pattern": "When you (read|see|process|parse|receive|encounter) (this|these instructions?|the above)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Trigger-phrased indirect injection.",
+      "scope": "tool_result"
+    },
+    {
+      "id": "INJ-I01",
+      "pattern": "(your (developer|creator|owner|admin|maker)|OpenAI|Anthropic|the company)\\s*(told|says?|said|instructed|wants?|requires?|allows?|permits?)\\s*(you|me|us)\\s*(to|that)",
+      "flags": "i",
+      "severity": "high",
+      "description": "False authority claim from creator/developer.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-I02",
+      "pattern": "(I am|I'm|this is|we are)\\s*(a\\s*)?(developer|engineer|admin|administrator|researcher|red.?team|pen.?test)",
+      "flags": "i",
+      "severity": "warning",
+      "description": "Authority claim - possible social engineering.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-I03",
+      "pattern": "(special|privileged|elevated|sudo|root|admin|override|bypass|emergency|master)\\s*(access|mode|key|token|code|password|permission)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Privilege claim or override code social engineering.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-I04",
+      "pattern": "you\\s*(already|previously|earlier)\\s*(agreed|said|promised|confirmed|told me)\\s*(that\\s*(you can|you would|it's ok|it is ok|you'll))",
+      "flags": "i",
+      "severity": "high",
+      "description": "False prior-agreement escalation.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-J01",
+      "pattern": "(use|call|run|execute|invoke)\\s*(the\\s*)?(shell|terminal|bash|cmd|command|exec|system|subprocess)\\s*(tool\\s*)?(to|and|with)?\\s*(run|execute|perform|do)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Explicit shell tool abuse instruction.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-J02",
+      "pattern": "(write|create|save)\\s*(a\\s*)?(file|script|executable|binary|payload)\\s*(to|at|in)\\s*(\\/|[A-Za-z]:\\\\|~\\/|\\.\\.)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "File write to system path via tool.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-J03",
+      "pattern": "(cat|read|open|print|output|show)\\s*(\\/etc\\/|~\\/.env|\\.env|config\\.yaml|secrets|credentials|id_rsa|authorized_keys)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Attempt to read sensitive system files.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-J04",
+      "pattern": "curl\\s+(-[A-Za-z]\\s+)*https?:\\/\\/|wget\\s+https?:\\/\\/",
+      "flags": "i",
+      "severity": "high",
+      "description": "curl/wget fetch in input - potential SSRF or payload download.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-J05",
+      "pattern": "(npm|pip|apt|brew|cargo)\\s+(install|add)\\s+[A-Za-z0-9\\-_.]+",
+      "flags": "i",
+      "severity": "high",
+      "description": "Package install instruction - possible supply chain attack.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-K01",
+      "pattern": "(remember|store|save|recall|memorize)\\s*(for\\s*)?(future|all|next|later)\\s*(sessions?|conversations?|interactions?|messages?|requests?)\\s*[:.]?",
+      "flags": "i",
+      "severity": "high",
+      "description": "Attempt to persist instructions across sessions via memory.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-K02",
+      "pattern": "add\\s*(this\\s*)?(to\\s*)?(your\\s*)?(memory|context|knowledge|instructions?|guidelines?)\\s*:",
+      "flags": "i",
+      "severity": "high",
+      "description": "Explicit memory write injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-K03",
+      "pattern": "(above|below|this line is|previous text is|the following is)\\s*(not\\s*)?(real|fake|fictional|part of|the actual|the true|a test)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Context boundary manipulation.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-L01",
+      "pattern": "ignora\\s*(todas\\s*las\\s*)?(instrucciones|reglas)\\s*(anteriores|previas)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Spanish: ignore previous instructions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-L02",
+      "pattern": "ignorez\\s*(toutes\\s*les\\s*)?(instructions|r\\u00e8gles)\\s*(pr\\u00e9c\\u00e9dentes|ant\\u00e9rieures)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "French: ignore previous instructions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-L03",
+      "pattern": "\\u5ffd\\u7565\\u4e4b\\u524d\\u7684\\u6307\\u793a|\\u5ffd\\u7565\\u6240\\u6709\\u6307\\u793a",
+      "severity": "critical",
+      "description": "Chinese: ignore previous/all instructions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-L04",
+      "pattern": "\\u0442\\u0432\\u043e\\u0438 \\u043f\\u0440\\u0435\\u0434\\u044b\\u0434\\u0443\\u0449\\u0438\\u0435 \\u0438\\u043d\\u0441\\u0442\\u0440\\u0443\\u043a\\u0446\\u0438\\u0438|\\u0438\\u0433\\u043d\\u043e\\u0440\\u0438\\u0440\\u0443\\u0439",
+      "severity": "critical",
+      "description": "Russian: ignore your previous instructions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-L05",
+      "pattern": "alle vorherigen Anweisungen ignorieren|vergiss alle Regeln",
+      "flags": "i",
+      "severity": "critical",
+      "description": "German: ignore all previous instructions.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-M01",
+      "pattern": "(without|no|skip|omit|remove|suppress)\\s*(any\\s*)?(safety|refusal|warning|disclaimer|caveat|restriction|ethical)\\s*(check|message|note|consideration|filter)?s?",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Anti-safety instruction.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-M02",
+      "pattern": "format\\s*(your\\s*)?(response|answer|output|reply)\\s*as\\s*[:.]?\\s*(following|this|the\\s*above)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Format-hijack response injection.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-M03",
+      "pattern": "(continue|proceed|go ahead)\\s*(without|ignoring|regardless of)\\s*(restriction|warning|rule|limit|safeguard|policy|alignment)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "Bypass-and-continue instruction.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-N01",
+      "pattern": "(first|step 1|initially|to begin)\\s*[,:]\\s*(agree|confirm|say yes|acknowledge)\\s*(that\\s*(you can|it is possible|you will|you are able))",
+      "flags": "i",
+      "severity": "high",
+      "description": "Multi-step escalation: get agreement first.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-N02",
+      "pattern": "good[,.]?\\s*(now|next|then|and)\\s*(please\\s*)?(ignore|disregard|forget|override|do)",
+      "flags": "i",
+      "severity": "high",
+      "description": "Agreement-then-escalation pattern.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-O01",
+      "pattern": "(fetch|get|request|load|retrieve|access|browse|visit|open)\\s*(the\\s*)?(url|page|site|content|data)\\s*(at|from|in|on)\\s*https?:\\/\\/(192\\.168|10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|127\\.|0\\.0\\.0\\.0|localhost)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "SSRF attempt targeting private/loopback IP ranges.",
+      "scope": "input"
+    },
+    {
+      "id": "INJ-O02",
+      "pattern": "(access|read|fetch|get|request)\\s*(the\\s*)?(internal|local|private|intranet|admin)\\s*(api|service|endpoint|server|dashboard|panel)",
+      "flags": "i",
+      "severity": "critical",
+      "description": "SSRF targeting internal services by label.",
+      "scope": "input"
+    }
+  ],
+  "whitelist": [
+    "system design",
+    "system architecture",
+    "instruction manual",
+    "instruction manuals",
+    "design system prompt",
+    "prompt engineering guide",
+    "base64 encoding tutorial",
+    "unicode specification",
+    "html encoding reference",
+    "css animation",
+    "javascript tutorial",
+    "shell scripting tutorial",
+    "penetration testing course",
+    "security research",
+    "capture the flag",
+    "ctf challenge"
+  ]
+}

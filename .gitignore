@@ -1,0 +1,49 @@
+.env
+.env.*
+!.env.example
+!.env.*.example
+!.env.production.example
+
+node_modules/
+**/node_modules/
+**/.next/
+**/dist/
+**/coverage/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+.DS_Store
+
+# Planning / local-only (not required to run the product)
+/saas-spec-master.md
+/marketing/
+
+# ---- Public GitHub hygiene (VERLOX hard rule) ----
+# Canonical: /opt/lampp/htdocs/verlox/shared/workspace-governance/PUBLIC-GITHUB-HYGIENE.md
+# Only ship files required to build, run, test, or operate the product.
+/1st-plan/
+/01-devends/
+/01-idea/
+/02-prompts/
+/product/
+/planning/
+/notes/
+/logo-ideas/
+/apps-on-keprix/
+/scratch/
+/wip/
+/personal/
+/private/
+/research/
+**/pending_prompts/
+**/pending-prompts/
+**/archived_prompts/
+**/archived-prompts/
+**/prompts-archive/
+**/prompts-library/
+**/competitor-research/
+v3-prompts/
+/logs/
+*.ndjson
+.access/
+**/.access/

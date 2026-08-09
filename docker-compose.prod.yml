@@ -1,0 +1,100 @@
+# Scout SaaS pilot stack (parallel to legacy Labyrinth console).
+# Requires: docker network create proxy
+# Do not cut over console.labyrinthscout.com DNS without owner approval.
+services:
+  scout-saas-engine:
+    build:
+      context: ./scout-engine
+      dockerfile: Dockerfile
+    container_name: scout-saas-engine
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      SCOUT_PORT: 4444
+      DATABASE_URL: ${DATABASE_URL:-postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout}
+      SCOUT_DATABASE_URL: ${DATABASE_URL:-postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout}
+      REDIS_URL: ${REDIS_URL:-redis://scout-saas-redis:6379}
+      DB_HOST: scout-saas-postgres
+      DB_PORT: 5432
+      DB_USER: scout
+      DB_PASSWORD: ${SCOUT_DB_PASSWORD:-scout}
+      DB_NAME: scout
+      DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-https://console.labyrinthscout.com}
+    depends_on:
+      scout-saas-postgres:
+        condition: service_healthy
+      scout-saas-redis:
+        condition: service_healthy
+    networks:
+      - scout-saas
+      - proxy
+    expose:
+      - "4444"
+    healthcheck:
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:4444/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  scout-saas-dashboard:
+    build:
+      context: ./scout-dashboard
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SCOUT_API_URL: ${NEXT_PUBLIC_SCOUT_API_URL:-https://console.labyrinthscout.com}
+    container_name: scout-saas-dashboard
+    environment:
+      NODE_ENV: production
+      PORT: 3005
+      NEXT_PUBLIC_SCOUT_API_URL: ${NEXT_PUBLIC_SCOUT_API_URL:-https://console.labyrinthscout.com}
+    depends_on:
+      scout-saas-engine:
+        condition: service_healthy
+    networks:
+      - scout-saas
+      - proxy
+    expose:
+      - "3005"
+    restart: unless-stopped
+
+  scout-saas-postgres:
+    image: postgres:16-alpine
+    container_name: scout-saas-postgres
+    environment:
+      POSTGRES_USER: scout
+      POSTGRES_PASSWORD: ${SCOUT_DB_PASSWORD:-scout}
+      POSTGRES_DB: scout
+    volumes:
+      - scout-saas-pg:/var/lib/postgresql/data
+    networks:
+      - scout-saas
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U scout -d scout']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+  scout-saas-redis:
+    image: redis:7-alpine
+    container_name: scout-saas-redis
+    networks:
+      - scout-saas
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  scout-saas:
+    driver: bridge
+  proxy:
+    external: true
+
+volumes:
+  scout-saas-pg:

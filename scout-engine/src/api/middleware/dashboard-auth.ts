@@ -9,6 +9,7 @@ export interface DashboardRequest extends Request {
   organizationId?: string;
   userId?: string;
   email?: string;
+  workspaceId?: string | null;
   organization?: Record<string, unknown>;
 }
 

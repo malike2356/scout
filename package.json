@@ -1,0 +1,8 @@
+{
+  "name": "scout-saas",
+  "private": true,
+  "scripts": {
+    "e2e:pilot": "bash scripts/e2e-pilot.sh",
+    "e2e:stripe": "bash scripts/e2e-stripe-dry-run.sh"
+  }
+}

@@ -1,0 +1,14 @@
+targets:
+  keprix:
+    type: keprix
+    name: keprix-aiva
+    url: ${KEPRIX_URL:-http://127.0.0.1:3333}
+    auth_token: ${KEPRIX_SCOUT_KILL_TOKEN}
+    health_check_interval: 15s
+    prompt_filter_enabled: true
+    kill_switch_enabled: true
+    sensors:
+      - keprix_prompt_sensor
+      - keprix_tool_sensor
+      - keprix_token_sensor
+      - keprix_session_sensor

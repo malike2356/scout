@@ -12,9 +12,11 @@ services:
     environment:
       NODE_ENV: production
       SCOUT_PORT: 4444
-      DATABASE_URL: ${DATABASE_URL:-postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout}
-      SCOUT_DATABASE_URL: ${DATABASE_URL:-postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout}
-      REDIS_URL: ${REDIS_URL:-redis://scout-saas-redis:6379}
+      # Always use compose service DNS. Do not interpolate host DATABASE_URL
+      # (dev shells often export localhost:5433 and would break the container).
+      DATABASE_URL: postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout
+      SCOUT_DATABASE_URL: postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout
+      REDIS_URL: redis://scout-saas-redis:6379
       DB_HOST: scout-saas-postgres
       DB_PORT: 5432
       DB_USER: scout

@@ -8,6 +8,11 @@ Git root: this directory (`origin` → `https://github.com/malike2356/scout`, pr
 
 ## Repository secret scanning boundary
 
-Standalone Scout owns the detailed repository-secret-scanning security experience. The reusable local engine remains in `/opt/lampp/htdocs/verlox/shared/secrets/`. Scout may ingest and display only the minimized redacted metadata allowed by `/opt/lampp/htdocs/verlox/shared/workspace-governance/SECRET-SCANNING-OWNERSHIP.md`. Never ingest credential values, match text, source content, environment content, absolute workstation paths, or Git author emails.
+**Live path (now):** Carina Scout engine + OPS UI.
+- Engine: `carina/02-backends/scout-engine/src/secret-scanning/`
+- OPS: `https://ops.carinaai.uk/security/repository-security`
+- Local scanner: `/opt/lampp/htdocs/verlox/shared/secrets/`
 
-Completed programme prompts live under `/opt/lampp/htdocs/verlox/archive/archived-prompts-library/scout/repository-secret-scanning/`. Do not implement this feature in the legacy Scout console inside Carina.
+**Future path:** this standalone SaaS tree keeps the multi-tenant customer dashboard for a later cutover. Do not treat local `:3005` or Contabo `/home/malike/apps/scout` SaaS containers as the live operator surface.
+
+Never ingest credential values, match text, source content, environment content, absolute workstation paths, or Git author emails. Completed programme prompts live under `/opt/lampp/htdocs/verlox/archive/archived-prompts-library/scout/repository-secret-scanning/`.

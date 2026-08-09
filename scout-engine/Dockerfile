@@ -20,6 +20,7 @@ COPY src ./src
 COPY public ./public
 RUN ./node_modules/.bin/tsc
 RUN mkdir -p dist/security && cp src/security/injection-patterns.json dist/security/
+RUN mkdir -p dist/db/migrations && cp src/db/migrations/*.sql dist/db/migrations/
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app

@@ -1,14 +1,30 @@
 // scout-engine/src/secret-scanning/health.ts
-import { readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { db } from '../db/index.js';
 
+function resolveMigrationsDir(): string {
+  const here = dirname(fileURLToPath(import.meta.url));
+  const candidates = [
+    join(here, '../db/migrations'),
+    join(here, '../../src/db/migrations'),
+    join(process.cwd(), 'src/db/migrations'),
+    join(process.cwd(), 'dist/db/migrations'),
+  ];
+  for (const dir of candidates) {
+    if (existsSync(dir)) return dir;
+  }
+  return candidates[0];
+}
+
 export async function getSecretScanHealth(): Promise<Record<string, unknown>> {
-  const migrationsDir = join(dirname(fileURLToPath(import.meta.url)), '../db/migrations');
-  const migrationFiles = readdirSync(migrationsDir)
-    .filter((name) => name.endsWith('.sql'))
-    .sort();
+  const migrationsDir = resolveMigrationsDir();
+  const migrationFiles = existsSync(migrationsDir)
+    ? readdirSync(migrationsDir)
+        .filter((name) => name.endsWith('.sql'))
+        .sort()
+    : [];
 
   let tablesOk = false;
   try {

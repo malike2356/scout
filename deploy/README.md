@@ -17,9 +17,11 @@ It is parallel to the legacy Labyrinth console used by Carina. Do not cut over
 cd /opt/lampp/htdocs/verlox/scout
 cp .env.production.example .env.production
 # edit .env.production
-docker compose -f docker-compose.prod.yml config
-docker compose -f docker-compose.prod.yml up -d --build
+docker compose --env-file .env.production -f docker-compose.prod.yml config
+docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
 ```
+
+Always pass `--env-file .env.production` so `${SCOUT_DB_PASSWORD}` substitution matches the Postgres volume password. Do not let a host-shell `DATABASE_URL` (often `localhost:5433`) override compose service DNS.
 
 Merge `deploy/nginx-console-labyrinthscout.conf.snippet` into edge nginx, reload nginx.
 

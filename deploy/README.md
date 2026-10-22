@@ -1,6 +1,7 @@
-# Deploying Scout SaaS (pilot)
+# Deploying Scout
 
-This stack is the **isolated SaaS** under `/opt/lampp/htdocs/verlox/scout/`.
+Not currently deployed anywhere - this documents how the stack under
+`<workspace-root>/scout/` was brought up during its original build-out, kept for reference.
 It is parallel to the legacy Labyrinth console used by Carina. Do not cut over
 `console.labyrinthscout.com` without explicit owner approval.
 
@@ -14,7 +15,7 @@ It is parallel to the legacy Labyrinth console used by Carina. Do not cut over
 ## Bring up
 
 ```bash
-cd /opt/lampp/htdocs/verlox/scout
+cd <workspace-root>/scout
 cp .env.production.example .env.production
 # edit .env.production
 docker compose --env-file .env.production -f docker-compose.prod.yml config
@@ -40,7 +41,7 @@ Expect `/health` and `/v1/health` to include `repository_secret_scanning.tables_
 - Scoring: `docs/SECRET-SCAN-SCORING.md`
 - Incident: `docs/INCIDENT-COMMITTED-CREDENTIAL.md`
 - Backup/restore: `docs/BACKUP-RESTORE-SECRET-SCANNING.md`
-- Local delivery: `/opt/lampp/htdocs/verlox/shared/secrets/README.md`
+- Local delivery: `<workspace-root>/shared/secrets/README.md`
 
 Capacity controls reuse org API rate limits plus ingest caps (`MAX_INGEST_BYTES` 256 KiB, max 500 findings per request).
 
@@ -57,7 +58,8 @@ docker compose -f docker-compose.prod.yml down
 
 Restore previous nginx upstream to the legacy Labyrinth console if you had switched it.
 
-## Stripe webhooks
+## Stripe webhooks (historical)
 
-Point Stripe (test) webhook to `https://console.labyrinthscout.com/webhooks/stripe`.
-Use price IDs from `/.access/.stripe-credentials-and-price-id.md` only.
+The engine still has a `/webhooks/stripe` route from the original SaaS build-out, but it is not
+live and there is nothing to point a real webhook at. Price IDs, if ever needed again, are in
+`/.access/.stripe-credentials-and-price-id.md` (marked retired).

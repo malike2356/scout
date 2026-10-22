@@ -171,7 +171,6 @@ Also table `channel_operator_links` for allowlist bindings.
 | `scout/scout-engine/src/api/webhooks/whatsapp.ts` | WhatsApp webhook |
 | `scout/scout-engine/src/db/migrations/01x-channel-control.sql` | Links + audit |
 | `scout/scout-dashboard` Settings → Channels | Link UX |
-| `scout/docs/CLIENT-INTEGRATION.md` | Operator section pointing here |
 | Pending prompts | `01-pending_prompts/scout-channel-kill/` |
 
 Do **not** put the SaaS messaging gateway inside live `console.labyrinthscout.com` until a migration prompt. Console keeps its own kill UI; SaaS gets channel-native kill for `gate.*` (or chosen host) tenants.

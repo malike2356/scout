@@ -1,10 +1,17 @@
-# Scout SaaS
+# Scout
 
+A runtime security/governance engine for AI agents: prompt filtering, event ingest, posture
+scoring, alerting, and a kill switch for agents that misbehave. Originally built out as a
+commercial SaaS product (see `docs/history/saas-spec-master.md` for that build-out's spec and
+history); it is now a personal research project being written up for a PhD application.
 
+## What it does
 
-## Plans (Stripe SoT)
-
-Free, Monitor (£99), Govern (£199), Team (£399). Price IDs in `/opt/lampp/htdocs/verlox/.access/.stripe-credentials-and-price-id.md`.
+- Filters prompts before an agent acts (`POST /v1/prompts/filter`)
+- Ingests tool/runtime events (`POST /v1/events`)
+- Ingests redacted repository secret-scan envelopes (`POST /v1/repository-secret-scans`)
+- Shows agents, alerts, scores, and repository security posture in a dashboard
+- Enforces a kill switch: suspended agents get HTTP 403 `kill_switch` on filter/events
 
 ## Local run
 
@@ -25,10 +32,14 @@ cd ../scout-sdk && npm install && npm run build
 ## E2E
 
 ```bash
-cd /opt/lampp/htdocs/verlox/scout
+cd <workspace-root>/scout
 SCOUT_API_BASE=http://localhost:4444 SCOUT_E2E_ALLOW_PLAN_OVERRIDE=true bash scripts/e2e-pilot.sh
 ```
 
-## Production (pilot)
+## Status
 
-See `deploy/README.md`. Host target: `console.labyrinthscout.com` (path-proxied `/v1` + `/api`). Do not cut over DNS without owner approval. Carina Scout remains on the legacy console until migrated.
+Not deployed anywhere. The multi-tenant/billing layer (`scout-engine/src/api/billing.ts`,
+`webhooks/stripe.ts`, `lib/plans.ts`, `middleware/plan-enforce.ts`, `scout-dashboard`'s
+signup/onboarding pages) is left in place as-built but unused - it's part of the engineering
+history of the project, not something currently offered or sold. See `docs/history/` for the
+original SaaS-ification spec.

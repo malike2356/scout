@@ -27,7 +27,7 @@
     "agent-security",
     "prompt-filtering"
   ],
-  "license": "UNLICENSED",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2"

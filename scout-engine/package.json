@@ -2,6 +2,7 @@
   "name": "scout-engine",
   "version": "1.0.0",
   "description": "Labyrinth Scout - Continuous Security Scanning Engine",
+  "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

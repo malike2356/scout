@@ -9,7 +9,9 @@ It is parallel to the legacy Labyrinth console used by Carina. Do not cut over
 
 - Docker + Compose v2
 - `docker network create proxy` (once on the host)
-- TLS / DNS handled by existing edge nginx (Carina proxy)
+- TLS / DNS: Scout is moving toward owning its own container and ingress - do not provision this
+  against Carina's edge nginx going forward. If this doc still describes a transitional
+  shared-proxy arrangement, name it honestly as transitional, not as a permanent dependency.
 - Copy `.env.production.example` to `scout/.env.production` and fill secrets
 
 ## Bring up

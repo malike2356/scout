@@ -1,6 +1,6 @@
 // scout-engine/src/lib/plans.ts
 // Plan catalog and limits. Plan names and Stripe price IDs must match the
-// Stripe source of truth: /opt/lampp/htdocs/verlox/.access/.stripe-credentials-and-price-id.md
+// Stripe source of truth: <workspace-root>/.access/.stripe-credentials-and-price-id.md
 // Never invent new plans or prices here.
 export type PlanName = 'free' | 'monitor' | 'govern' | 'team';
 

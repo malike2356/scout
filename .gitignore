@@ -19,7 +19,7 @@ __pycache__/
 /marketing/
 
 # ---- Public GitHub hygiene (VERLOX hard rule) ----
-# Canonical: /opt/lampp/htdocs/verlox/shared/workspace-governance/PUBLIC-GITHUB-HYGIENE.md
+# Canonical: <workspace-root>/shared/workspace-governance/PUBLIC-GITHUB-HYGIENE.md
 # Only ship files required to build, run, test, or operate the product.
 /1st-plan/
 /01-devends/

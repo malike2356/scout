@@ -30,4 +30,4 @@ Network `findings` uniqueness is `(fingerprint, target_id)`. Secret scans are re
 
 ## Scoring
 
-See `/opt/lampp/htdocs/verlox/scout/docs/SECRET-SCAN-SCORING.md` for exposure weighting and anti-manipulation caps on `exposed_secret` mirror rows.
+See `<workspace-root>/scout/docs/SECRET-SCAN-SCORING.md` for exposure weighting and anti-manipulation caps on `exposed_secret` mirror rows.

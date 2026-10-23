@@ -32,7 +32,7 @@ Marketing already promises phone one-button halt (`scout/marketing/email-nurture
 | L1 Pause worker | `/pause <agent>` | Mark one agent paused; filter still allowed, tools blocked |
 | L2 Stop tools | `/tools-off <agent\|all>` | Block tool execution; prompts may still be filtered |
 | L3 Freeze org | `/freeze` | All org agents: no filter/events/tools (same as SaaS `suspended` today) |
-| L4 Full kill | `/kill` | Org-wide freeze + audit critical + optional push to Carina listeners when linked |
+| L4 Full kill | `/kill` | Org-wide freeze + audit critical + optional push to Keprix listeners when linked |
 | L5 Disarm / resume | `/resume` | Requires confirm + stronger auth; restores `offline` |
 
 Default panic path for linked operators: **`/kill`** (L4).
@@ -107,7 +107,8 @@ Reuse SaaS kill path:
 - Public `/v1` already returns 403 `kill_switch` when suspended (pilot readiness)
 - SDK `assertAgentRunnable` already throws on kill
 
-For Carina-linked deployments later: also publish to existing console/Carina kill listeners; do not block SaaS shipping on that.
+For Keprix-linked deployments: also publish to the sidecar's own kill listeners; do not block
+console shipping on that.
 
 ## Audit log schema
 

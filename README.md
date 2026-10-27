@@ -13,6 +13,15 @@ history); it is now a personal research project being written up for a PhD appli
 - Shows agents, alerts, scores, and repository security posture in a dashboard
 - Enforces a kill switch: suspended agents get HTTP 403 `kill_switch` on filter/events
 
+## Research context
+
+The posture scoring and kill switch are one instance of a more general problem: telling
+adversarial behaviour apart from normal behaviour when the adversary adapts to avoid detection.
+That is also the shape of the detection problem in coordinated inauthentic behaviour and
+socio-cognitive threat work, just aimed at an AI agent's own actions rather than at human-run
+social media accounts. Scout does not do social media or network analysis; the connection is the
+detection problem under an adaptive adversary, not the domain.
+
 ## Local run
 
 ```bash

@@ -17,14 +17,14 @@ history); it is now a personal research project being written up for a PhD appli
 
 Scout studies detection under an adaptive adversary: how much of a hostile agent's behaviour can
 be identified from prompts, tool calls and runtime events before damage is done, and how quickly
-a classifier degrades once the adversary knows it is being classified. That is the same shape of
-problem as coordinated inauthentic behaviour and socio-cognitive threat detection, aimed at an AI
-agent's own actions rather than at human-run social media accounts; Scout does not do social media
-or network analysis, and makes no claim to.
+a classifier degrades once the adversary knows it is being classified. That is a general detection
+problem, not specific to AI agents; the same shape of question shows up anywhere a bad actor
+adapts once it learns it is being watched. Scout applies it to an agent's own actions; it does not
+analyse human-run accounts or social networks.
 
-Status: the engine is functional and not deployed. A dedicated adversarial-evaluation artefact,
-testing detection against public coordinated-behaviour datasets, is planned as a separate
-repository; nothing from that work exists yet, and this README will be updated once it does.
+Status: the engine is functional and not deployed. A dedicated adversarial-evaluation artefact is
+planned as a separate repository; nothing from that work exists yet, and this README will be
+updated once it does.
 
 ## Local run
 

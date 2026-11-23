@@ -160,6 +160,66 @@ dashboardRouter.use(dashboardRepositorySecurityRouter);
 dashboardRouter.use(dashboardGovernanceRouter);
 
 // ════════════════════════════════════════════
+// Alert settings (trusted operator channels)
+// ════════════════════════════════════════════
+// Same storage as apiRouter's API-key-authenticated /settings/alerts
+// (workspace_settings) - this is the dashboard-session-authenticated path
+// to the same data, scoped to the org's own (first/default) workspace.
+// apiRouter's version is never mounted in server.ts, so this was the only
+// reachable route for it; scout-dashboard calls /api/dashboard/settings/alerts.
+async function resolveDefaultWorkspaceId(organizationId: string): Promise<string | null> {
+  const workspace = await db('workspaces').where({ organization_id: organizationId }).first('id');
+  return workspace?.id ?? null;
+}
+
+dashboardRouter.get('/settings/alerts', async (req, res) => {
+  try {
+    const organizationId = (req as DashboardRequest).organizationId!;
+    const workspaceId = await resolveDefaultWorkspaceId(organizationId);
+    const settings = workspaceId
+      ? await db('workspace_settings').where({ workspace_id: workspaceId }).first()
+      : null;
+    res.json({
+      alert_email: settings?.alert_email || '',
+      telegram_chat_id: settings?.telegram_chat_id || '',
+      slack_webhook_url: settings?.slack_webhook_url || '',
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+dashboardRouter.put('/settings/alerts', async (req, res) => {
+  try {
+    const organizationId = (req as DashboardRequest).organizationId!;
+    const workspaceId = await resolveDefaultWorkspaceId(organizationId);
+    if (!workspaceId) {
+      res.status(404).json({ error: 'not_found', message: 'No workspace found for this organization.' });
+      return;
+    }
+    const { alert_email, telegram_chat_id, slack_webhook_url } = (req.body ?? {}) as Record<string, unknown>;
+
+    const existing = await db('workspace_settings').where({ workspace_id: workspaceId }).first();
+    const fields = {
+      alert_email: typeof alert_email === 'string' ? alert_email : (existing?.alert_email ?? ''),
+      telegram_chat_id: typeof telegram_chat_id === 'string' ? telegram_chat_id : (existing?.telegram_chat_id ?? ''),
+      slack_webhook_url: typeof slack_webhook_url === 'string' ? slack_webhook_url : (existing?.slack_webhook_url ?? ''),
+    };
+
+    if (existing) {
+      await db('workspace_settings').where({ workspace_id: workspaceId }).update({ ...fields, updated_at: new Date().toISOString() });
+    } else {
+      await db('workspace_settings').insert({ workspace_id: workspaceId, ...fields });
+    }
+
+    const updated = await db('workspace_settings').where({ workspace_id: workspaceId }).first();
+    res.json({ settings: updated });
+  } catch (err) {
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// ════════════════════════════════════════════
 // Overview
 // ════════════════════════════════════════════
 dashboardRouter.get('/overview', async (req, res) => {

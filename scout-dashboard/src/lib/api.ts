@@ -184,11 +184,11 @@ export const api = {
   },
 
   alertSettings() {
-    return request<AlertSettings>('/api/settings/alerts');
+    return request<AlertSettings>('/api/dashboard/settings/alerts');
   },
 
   updateAlertSettings(payload: AlertSettings) {
-    return request<{ settings?: AlertSettings; alert_settings?: AlertSettings }>('/api/settings/alerts', {
+    return request<{ settings?: AlertSettings; alert_settings?: AlertSettings }>('/api/dashboard/settings/alerts', {
       method: 'PUT',
       body: payload,
     });

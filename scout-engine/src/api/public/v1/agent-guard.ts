@@ -1,5 +1,6 @@
 // scout-engine/src/api/public/v1/agent-guard.ts
 // Shared helpers for public /v1 routes that must respect kill switch state.
+import type { Knex } from 'knex';
 import { db } from '../../../db/index.js';
 
 export class AgentGuardError extends Error {
@@ -30,6 +31,28 @@ export async function loadOrgAgent(organizationId: string, agentId: string): Pro
 
 export function isKillSwitchActive(status: unknown): boolean {
   return status === 'suspended' || status === 'killed';
+}
+
+/**
+ * Heartbeat write used by event ingest. The WHERE clause is checked in the
+ * same UPDATE as the status write, so a suspend that commits first is not
+ * overwritten by an in-flight request that already observed status=online.
+ * Returns the number of rows updated (0 when the agent is suspended, killed,
+ * or gone).
+ */
+export function runnableHeartbeatQuery(connection: Knex, agentId: string, atIso: string) {
+  return connection('connected_agents')
+    .where({ id: agentId })
+    .whereNotIn('status', ['suspended', 'killed'])
+    .update({
+      last_heartbeat: atIso,
+      status: 'online',
+    });
+}
+
+export async function recordRunnableHeartbeat(agentId: string, at: Date = new Date()): Promise<number> {
+  const updated = await runnableHeartbeatQuery(db, agentId, at.toISOString());
+  return typeof updated === 'number' ? updated : 0;
 }
 
 /**

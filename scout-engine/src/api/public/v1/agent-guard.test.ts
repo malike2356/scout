@@ -1,6 +1,13 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { AgentGuardError, assertAgentRunnable, isKillSwitchActive, loadOrgAgent } from './agent-guard.js';
+import knex from 'knex';
+import {
+  AgentGuardError,
+  assertAgentRunnable,
+  isKillSwitchActive,
+  loadOrgAgent,
+  runnableHeartbeatQuery,
+} from './agent-guard.js';
 
 describe('agent-guard', () => {
   it('isKillSwitchActive recognizes suspended and the vestigial killed status', () => {
@@ -54,5 +61,13 @@ describe('agent-guard', () => {
 
   it('loadOrgAgent is exported for route use (smoke import check)', () => {
     assert.equal(typeof loadOrgAgent, 'function');
+  });
+
+  it('heartbeat update cannot mark a suspended or killed agent online', () => {
+    const connection = knex({ client: 'pg' });
+    const { sql, bindings } = runnableHeartbeatQuery(connection, 'agent-1', '2026-11-23T11:00:00.000Z').toSQL();
+    assert.match(sql, /"status" not in \(\?, \?\)/i);
+    assert.deepEqual(bindings, ['2026-11-23T11:00:00.000Z', 'online', 'agent-1', 'suspended', 'killed']);
+    void connection.destroy();
   });
 });

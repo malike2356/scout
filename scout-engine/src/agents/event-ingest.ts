@@ -1,6 +1,7 @@
 // scout-engine/src/agents/event-ingest.ts
 // Agent event ingestion; receives tool events from connected agents
 import { db } from '../db/index.js';
+import { isKillSwitchActive, recordRunnableHeartbeat } from '../api/public/v1/agent-guard.js';
 import { detectSuspicious } from './suspicious-detector.js';
 
 export interface AgentEvent {
@@ -26,7 +27,7 @@ export async function ingestAgentEvent(event: AgentEvent): Promise<{ stored: boo
     throw new Error('Agent not found');
   }
 
-  if (agent.status === 'suspended') {
+  if (isKillSwitchActive(agent.status)) {
     throw new Error('Agent is suspended');
   }
 
@@ -37,11 +38,12 @@ export async function ingestAgentEvent(event: AgentEvent): Promise<{ stored: boo
     }
   }
 
-  // Update heartbeat
-  await db('connected_agents').where({ id: event.agentId }).update({
-    last_heartbeat: new Date().toISOString(),
-    status: 'online',
-  });
+  // Conditional heartbeat first: a suspend that landed after the read above
+  // must stick. A plain status='online' write clears the kill switch.
+  const heartbeat = await recordRunnableHeartbeat(event.agentId);
+  if (heartbeat === 0) {
+    throw new Error('Agent is suspended');
+  }
 
   // Store event
   await db('agent_events').insert({

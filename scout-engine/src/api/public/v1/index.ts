@@ -12,6 +12,7 @@ import {
   assertAgentRunnable,
   isKillSwitchActive,
   loadOrgAgent,
+  recordRunnableHeartbeat,
 } from './agent-guard.js';
 import { upsertRuntimeTarget } from '../../../integrations/keprix-connector.js';
 import { evaluateKeprixAnomalyOnEvent } from '../../../alerts/keprix-anomaly.js';
@@ -313,6 +314,15 @@ publicV1Router.post('/events', async (req, res) => {
       const toolArgs = raw.tool_args ?? raw.toolArgs;
       const toolResult = raw.tool_result ?? raw.toolResult;
 
+      // Do this before inserting. The predicate is on the UPDATE itself, so a
+      // suspend that commits after assertAgentRunnable cannot be cleared by
+      // this request, and a lost race does not store the event either.
+      const heartbeat = await recordRunnableHeartbeat(agentId);
+      if (heartbeat === 0) {
+        const fresh = await loadOrgAgent(tenantReq.organizationId!, agentId);
+        assertAgentRunnable(fresh, tenantReq.organization);
+      }
+
       await db('agent_events').insert({
         agent_id: agentId,
         workspace_id: agent.workspace_id,
@@ -325,10 +335,6 @@ publicV1Router.post('/events', async (req, res) => {
         session_id: (raw.session_id ?? raw.sessionId ?? null) as string | null,
         occurred_at: (raw.occurred_at ?? raw.timestamp ?? new Date().toISOString()) as string,
       });
-
-      await db('connected_agents')
-        .where({ id: agentId })
-        .update({ last_heartbeat: new Date().toISOString(), status: 'online' });
 
       await evaluateKeprixAnomalyOnEvent({
         organizationId: tenantReq.organizationId!,

@@ -9,6 +9,29 @@ export interface ScoutConfig {
   baseUrl?: string;
   agentName?: string;
   timeoutMs?: number;
+  /**
+   * Optional default signing key for the on-chain agent identity feature
+   * (see registerIdentity()). Only needed when the organization has
+   * require_onchain_identity enabled; filter()/trackEvent() calls then sign
+   * themselves automatically. A 0x-prefixed secp256k1 private key - never
+   * hardcode this, load it from a secret manager or env var.
+   */
+  identityPrivateKey?: `0x${string}`;
+}
+
+export interface IdentityChallengeResponse {
+  agent_id: string;
+  nonce: string;
+  message: string;
+  expires_in_seconds: number;
+}
+
+export interface IdentityRegisterResponse {
+  agent_id: string;
+  chain_address: string;
+  tx_hash: string | null;
+  explorer_url: string | null;
+  verified_onchain: boolean;
 }
 
 export interface RegisterAgentPayload {
@@ -33,6 +56,8 @@ export interface FilterPayload {
   agentId: string;
   tools?: string[];
   metadata?: Record<string, unknown>;
+  /** Overrides config.identityPrivateKey for this call only. */
+  signWith?: `0x${string}`;
 }
 
 export type FilterVerdict = 'allowed' | 'flagged' | 'blocked';
@@ -65,6 +90,8 @@ export interface TrackEventPayload {
   message?: string;
   severity?: 'low' | 'medium' | 'high' | 'critical' | string;
   metadata?: Record<string, unknown>;
+  /** Overrides config.identityPrivateKey for this call only. */
+  signWith?: `0x${string}`;
 }
 
 export interface TrackEventResponse {

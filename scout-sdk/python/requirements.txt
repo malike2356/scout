@@ -1,1 +1,5 @@
 requests>=2.31
+
+# Optional - only needed for the on-chain agent identity feature
+# (generate_identity_key, register_identity, identity_private_key/sign_with).
+# eth_account>=0.13

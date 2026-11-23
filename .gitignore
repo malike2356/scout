@@ -47,3 +47,7 @@ v3-prompts/
 *.ndjson
 .access/
 **/.access/
+
+# A private key was found in this file during the 2026-11-23 kill-switch/
+# identity work - never let it be staged, even by a future git add -A.
+scout-bloackchain-wallet-id.md

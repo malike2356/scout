@@ -1,8 +1,11 @@
+import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 import {
   AgentStatusResponse,
   FilterPayload,
   FilterResult,
   HealthResponse,
+  IdentityChallengeResponse,
+  IdentityRegisterResponse,
   RegisterAgentPayload,
   RegisterAgentResponse,
   RepositorySecretScanPayload,
@@ -13,6 +16,12 @@ import {
   TrackEventPayload,
   TrackEventResponse,
 } from './types.js';
+
+/** Generates a fresh secp256k1 keypair for use with registerIdentity(). Store the private key securely. */
+export function generateIdentityKey(): { privateKey: `0x${string}`; address: `0x${string}` } {
+  const privateKey = generatePrivateKey();
+  return { privateKey, address: privateKeyToAccount(privateKey).address };
+}
 
 const DEFAULT_BASE_URL = 'https://console.labyrinthscout.com';
 const DEFAULT_TIMEOUT_MS = 10_000;
@@ -30,6 +39,7 @@ export class Scout {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly timeoutMs: number;
+  private readonly identityPrivateKey?: `0x${string}`;
   readonly agentName?: string;
 
   constructor(config: ScoutConfig) {
@@ -45,6 +55,64 @@ export class Scout {
     ).replace(/\/$/, '');
     this.timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.agentName = config.agentName;
+    this.identityPrivateKey = config.identityPrivateKey;
+  }
+
+  /** One-time nonce the agent must sign to prove it controls `address` before Scout will register it. */
+  async getIdentityChallenge(agentId: string): Promise<IdentityChallengeResponse> {
+    return this.request<IdentityChallengeResponse>(
+      'GET',
+      `/v1/agents/${encodeURIComponent(agentId)}/identity/challenge`,
+    );
+  }
+
+  /**
+   * Proves control of a key and anchors agentId <-> address in Scout's
+   * on-chain identity registry (ScoutAgentIdentity.sol, Sepolia). Uses
+   * `privateKey` if given, else config.identityPrivateKey, else generates a
+   * fresh one via generateIdentityKey() - in which case, save the returned
+   * key yourself; Scout never stores it.
+   */
+  async registerIdentity(
+    agentId: string,
+    privateKey?: `0x${string}`,
+    metadataURI?: string,
+  ): Promise<IdentityRegisterResponse & { privateKeyUsed: `0x${string}` }> {
+    const key = privateKey ?? this.identityPrivateKey ?? generateIdentityKey().privateKey;
+    const account = privateKeyToAccount(key);
+    const challenge = await this.getIdentityChallenge(agentId);
+    const signature = await account.signMessage({ message: challenge.message });
+
+    const result = await this.request<IdentityRegisterResponse>(
+      'POST',
+      `/v1/agents/${encodeURIComponent(agentId)}/identity/register`,
+      {
+        address: account.address,
+        nonce: challenge.nonce,
+        signature,
+        metadata_uri: metadataURI,
+      },
+    );
+    return { ...result, privateKeyUsed: key };
+  }
+
+  /**
+   * Signs a canonical envelope the way scout-engine's strict-mode
+   * (organizations.require_onchain_identity) verifier expects: a JSON
+   * string containing agent_id + timestamp + whatever domain fields the
+   * caller passes, signed as a whole so key order can't be gamed.
+   */
+  private async signEnvelope(
+    agentId: string,
+    fields: Record<string, unknown>,
+    privateKey?: `0x${string}`,
+  ): Promise<{ signed_message: string; signature: string } | null> {
+    const key = privateKey ?? this.identityPrivateKey;
+    if (!key) return null;
+    const account = privateKeyToAccount(key);
+    const signed_message = JSON.stringify({ agent_id: agentId, timestamp: Date.now(), ...fields });
+    const signature = await account.signMessage({ message: signed_message });
+    return { signed_message, signature };
   }
 
   async registerAgent(payload: RegisterAgentPayload): Promise<RegisterAgentResponse> {
@@ -60,11 +128,13 @@ export class Scout {
     if (!payload.agentId) {
       throw new Error('Scout.filter: agentId is required');
     }
+    const envelope = await this.signEnvelope(payload.agentId, { prompt: payload.prompt }, payload.signWith);
     const result = await this.request<RawFilterResult>('POST', '/v1/prompts/filter', {
       prompt: payload.prompt,
       agent_id: payload.agentId,
       tools: payload.tools,
       metadata: payload.metadata,
+      ...envelope,
     });
     return {
       verdict: result.verdict,
@@ -79,6 +149,10 @@ export class Scout {
   }
 
   async trackEvent(payload: TrackEventPayload): Promise<TrackEventResponse> {
+    // Signed as a single-event submission (event_count: 1) - matches how
+    // scout-engine's /v1/events wraps one posted object into a 1-element
+    // batch before checking the signature envelope.
+    const envelope = await this.signEnvelope(payload.agentId, { event_count: 1 }, payload.signWith);
     return this.request<TrackEventResponse>('POST', '/v1/events', {
       agent_id: payload.agentId,
       event_type: payload.type,
@@ -87,6 +161,7 @@ export class Scout {
       tool_result: payload.toolResult,
       duration_ms: payload.durationMs,
       session_id: payload.sessionId,
+      ...envelope,
     });
   }
 
@@ -94,14 +169,24 @@ export class Scout {
     return this.request<AgentStatusResponse>('GET', `/v1/agents/${encodeURIComponent(agentId)}/status`);
   }
 
-  /** Throws ScoutApiError(code=kill_switch) if the agent is suspended. */
+  /** Throws ScoutApiError(code=kill_switch|global_kill_switch) if the agent (or its org) is suspended. */
   async assertAgentRunnable(agentId: string): Promise<AgentStatusResponse> {
     const status = await this.getStatus(agentId);
     if (status.kill_switch_active || status.status === 'suspended' || status.status === 'killed') {
+      const scope = status.kill_switch_scope as string | undefined;
       throw new ScoutApiError(
-        'Agent is suspended. Tool and prompt processing are blocked until an operator resumes it.',
+        scope === 'global'
+          ? 'Organization-wide kill switch is active. All agents are blocked until an operator resumes it.'
+          : 'Agent is suspended. Tool and prompt processing are blocked until an operator resumes it.',
         403,
-        { error: 'kill_switch', agent_id: agentId, status: status.status, kill_switch_active: true },
+        {
+          error: scope === 'global' ? 'global_kill_switch' : 'kill_switch',
+          agent_id: agentId,
+          status: status.status,
+          kill_switch_active: true,
+          scope,
+          reason: status.suspension_reason ?? null,
+        },
       );
     }
     return status;

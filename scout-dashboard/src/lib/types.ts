@@ -6,7 +6,25 @@ export interface Organization {
   slug?: string;
   plan?: Plan;
   subscription_status?: string;
+  global_kill_active?: boolean;
+  global_kill_reason?: string | null;
+  global_kill_at?: string | null;
+  auto_kill_threshold?: number | null;
+  require_onchain_identity?: boolean;
   created_at?: string;
+}
+
+export interface KillSwitchEvent {
+  id: string;
+  organization_id: string;
+  agent_id: string | null;
+  scope: 'agent' | 'global';
+  action: 'kill' | 'resume';
+  source: 'manual' | 'policy' | 'channel';
+  reason?: string | null;
+  triggered_by?: string | null;
+  chain_tx_hash?: string | null;
+  created_at: string;
 }
 
 export interface AuthResponse {
@@ -35,6 +53,14 @@ export interface Agent {
   tools?: string[];
   events?: AgentEvent[];
   created_at?: string;
+  suspension_reason?: string | null;
+  suspended_at?: string | null;
+  suspended_by?: string | null;
+  kill_source?: 'manual' | 'policy' | 'channel' | null;
+  chain_address?: string | null;
+  chain_tx_hash_registered?: string | null;
+  chain_tx_hash_revoked?: string | null;
+  identity_verified_onchain?: boolean;
 }
 
 export interface AgentEvent {

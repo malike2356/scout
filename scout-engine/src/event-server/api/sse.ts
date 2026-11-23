@@ -33,8 +33,12 @@ export function broadcastStats(stats: { critical: number; warning: number; info:
   }
 }
 
-// Heartbeat to keep connections alive (every 30 seconds)
-setInterval(() => {
+// Heartbeat to keep connections alive (every 30 seconds). unref() so this
+// timer alone never keeps the process alive - it matters in the running
+// server (which always has other open handles anyway) and, now that
+// control/agent-control.ts imports broadcastEvent, in test/CLI scripts that
+// import this module transitively but never start an HTTP server.
+const heartbeatTimer = setInterval(() => {
   const heartbeat = JSON.stringify({ type: 'heartbeat', timestamp: new Date().toISOString() });
   for (const client of clients) {
     try {
@@ -44,6 +48,7 @@ setInterval(() => {
     }
   }
 }, 30_000);
+heartbeatTimer.unref();
 
 sseRouter.get('/', (req: Request, res: Response) => {
   // Set SSE headers

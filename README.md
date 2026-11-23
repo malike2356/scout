@@ -11,7 +11,15 @@ history); it is now a personal research project being written up for a PhD appli
 - Ingests tool/runtime events (`POST /v1/events`)
 - Ingests redacted repository secret-scan envelopes (`POST /v1/repository-secret-scans`)
 - Shows agents, alerts, scores, and repository security posture in a dashboard
-- Enforces a kill switch: suspended agents get HTTP 403 `kill_switch` on filter/events
+- Enforces a kill switch at three levels: per-agent (dashboard/admin API),
+  organization-wide (one flag blocks every agent instantly), and
+  policy-triggered (auto-suspends an agent after repeated critical
+  prompt-injection blocks) - unified in one audited path, see
+  `docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md`
+- Gives each agent a verifiable cryptographic identity, anchored in a
+  purpose-built registry contract (`scout-chain/`) on the Sepolia testnet,
+  closing the gap where any caller holding an org's API key could
+  otherwise submit events/prompts as any agent under it
 
 ## Research
 
@@ -40,6 +48,12 @@ cp .env.example .env.local
 pnpm install && pnpm build && pnpm start # :3005
 
 cd ../scout-sdk && npm install && npm run build
+
+# Optional - on-chain agent identity (see scout-chain/README.md):
+cd ../scout-chain
+pnpm install && pnpm generate-wallet   # then fund the printed address via a Sepolia faucet
+pnpm compile && pnpm test              # works with no funded wallet
+pnpm deploy:sepolia                    # needs a funded wallet; prints SCOUT_CHAIN_CONTRACT_ADDRESS
 ```
 
 ## E2E

@@ -7,6 +7,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import YAML from 'yamljs';
 import { db } from '../db/index.js';
+import { suspendAgent, resumeAgent, type KillSource } from '../control/agent-control.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -358,15 +359,16 @@ export async function killAgentAndPropagateToKeprix(opts: {
   channel?: string;
   command?: string;
   operatorId?: string;
+  source?: KillSource;
 }): Promise<{ agent: Record<string, unknown>; keprix: KeprixPropagateResult }> {
-  const [agent] = await db('connected_agents')
-    .where({ id: opts.agentId, organization_id: opts.organizationId })
-    .update({ status: 'suspended' })
-    .returning('*');
-
-  if (!agent) {
-    throw Object.assign(new Error('Agent not found'), { status: 404 });
-  }
+  const reason = opts.reason || 'Operator-initiated kill from Scout dashboard';
+  const { agent } = await suspendAgent({
+    organizationId: opts.organizationId,
+    agentId: opts.agentId,
+    reason,
+    source: opts.source || (opts.channel ? 'channel' : 'manual'),
+    triggeredBy: opts.operatorId || opts.activatedBy,
+  });
 
   const target = await getRuntimeTargetForAgent(opts.organizationId, opts.agentId);
   const meta =
@@ -382,7 +384,7 @@ export async function killAgentAndPropagateToKeprix(opts: {
     {
       workspace_id: workspaceId,
       scope: workspaceId ? 'workspace' : 'agent_global',
-      reason: opts.reason || 'Operator-initiated kill from Scout dashboard',
+      reason,
       activated_by: opts.activatedBy || 'scout',
       channel: opts.channel,
       command: opts.command,
@@ -403,15 +405,13 @@ export async function killAgentAndPropagateToKeprix(opts: {
 export async function resumeAgentAndPropagateToKeprix(opts: {
   organizationId: string;
   agentId: string;
+  triggeredBy?: string;
 }): Promise<{ agent: Record<string, unknown>; keprix: KeprixPropagateResult }> {
-  const [agent] = await db('connected_agents')
-    .where({ id: opts.agentId, organization_id: opts.organizationId })
-    .update({ status: 'offline' })
-    .returning('*');
-
-  if (!agent) {
-    throw Object.assign(new Error('Agent not found'), { status: 404 });
-  }
+  const { agent } = await resumeAgent({
+    organizationId: opts.organizationId,
+    agentId: opts.agentId,
+    triggeredBy: opts.triggeredBy,
+  });
 
   const target = await getRuntimeTargetForAgent(opts.organizationId, opts.agentId);
   const meta =

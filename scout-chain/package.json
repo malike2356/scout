@@ -1,0 +1,32 @@
+{
+  "name": "@scout-security/chain",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Scout on-chain agent identity registry (ScoutAgentIdentity.sol) - Sepolia testnet deployment, compile/test/deploy tooling.",
+  "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "tsx scripts/deploy.ts sepolia",
+    "generate-wallet": "tsx scripts/generate-wallet.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ignition": "^3.1.10",
+    "@nomicfoundation/hardhat-ignition-viem": "^3.1.6",
+    "@nomicfoundation/hardhat-keystore": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.0",
+    "@nomicfoundation/hardhat-node-test-runner": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox-viem": "^5.0.7",
+    "@nomicfoundation/hardhat-verify": "^3.0.0",
+    "@nomicfoundation/hardhat-viem": "^3.0.4",
+    "@nomicfoundation/hardhat-viem-assertions": "^3.0.5",
+    "@nomicfoundation/ignition-core": "^3.1.10",
+    "hardhat": "^3.22.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "viem": "^2.21.54",
+    "dotenv": "^16.4.5"
+  }
+}

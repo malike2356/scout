@@ -28,6 +28,9 @@
     "prompt-filtering"
   ],
   "license": "MIT",
+  "dependencies": {
+    "viem": "^2.21.54"
+  },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "typescript": "^5.7.2"

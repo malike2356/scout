@@ -5,6 +5,7 @@ import type {
   Alert,
   AuthResponse,
   AlertSettings,
+  KillSwitchEvent,
   Organization,
   OverviewData,
   ScoresData,
@@ -239,12 +240,48 @@ export const api = {
     return request<void>(`/api/dashboard/api-keys/${id}`, { method: 'DELETE' });
   },
 
-  async killswitch(agentId: string) {
+  async killswitch(agentId: string, reason?: string) {
     const raw = await request<Agent | { agent?: Agent }>(`/api/dashboard/killswitch/${agentId}`, {
+      method: 'POST',
+      body: reason ? { reason } : undefined,
+    });
+    if (raw && typeof raw === 'object' && 'agent' in raw && raw.agent) return raw.agent;
+    return raw as Agent;
+  },
+
+  async resumeAgent(agentId: string) {
+    const raw = await request<Agent | { agent?: Agent }>(`/api/dashboard/agents/${agentId}/resume`, {
       method: 'POST',
     });
     if (raw && typeof raw === 'object' && 'agent' in raw && raw.agent) return raw.agent;
     return raw as Agent;
+  },
+
+  async killswitchGlobal(reason?: string) {
+    const raw = await request<{ organization?: Organization }>('/api/dashboard/killswitch/global', {
+      method: 'POST',
+      body: reason ? { reason } : undefined,
+    });
+    return raw.organization as Organization;
+  },
+
+  async resumeGlobalKillswitch() {
+    const raw = await request<{ organization?: Organization }>('/api/dashboard/killswitch/global/resume', {
+      method: 'POST',
+    });
+    return raw.organization as Organization;
+  },
+
+  killSwitchEvents(limit = 50) {
+    return request<{ events: KillSwitchEvent[] }>(`/api/dashboard/killswitch/events?limit=${limit}`);
+  },
+
+  async updateOrg(payload: { name?: string; auto_kill_threshold?: number | null; require_onchain_identity?: boolean }) {
+    const raw = await request<{ organization?: Organization }>('/api/dashboard/org', {
+      method: 'PATCH',
+      body: payload,
+    });
+    return raw.organization as Organization;
   },
 
   keprixStatus() {

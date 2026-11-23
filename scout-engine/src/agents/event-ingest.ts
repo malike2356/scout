@@ -30,6 +30,13 @@ export async function ingestAgentEvent(event: AgentEvent): Promise<{ stored: boo
     throw new Error('Agent is suspended');
   }
 
+  if (agent.organization_id) {
+    const org = await db('organizations').where({ id: agent.organization_id }).first();
+    if (org?.global_kill_active) {
+      throw new Error('Organization-wide kill switch is active');
+    }
+  }
+
   // Update heartbeat
   await db('connected_agents').where({ id: event.agentId }).update({
     last_heartbeat: new Date().toISOString(),

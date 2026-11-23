@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/auth';
 import { PLANS } from '@/lib/plans';
 import { TopBar } from '@/components/TopBar';
 import { ErrorState, LoadingState } from '@/components/LoadingAndError';
+import { KillSwitchDialog } from '@/components/KillSwitchDialog';
 import type { AlertSettings } from '@/lib/types';
 
 export default function SettingsPage() {
@@ -21,6 +22,12 @@ export default function SettingsPage() {
     telegram_chat_id: '',
     slack_webhook_url: '',
   });
+  const [showGlobalKill, setShowGlobalKill] = useState(false);
+  const [globalResuming, setGlobalResuming] = useState(false);
+  const [securityBusy, setSecurityBusy] = useState(false);
+  const [securityError, setSecurityError] = useState<string | null>(null);
+  const [autoKillThreshold, setAutoKillThreshold] = useState('');
+  const [requireOnchainIdentity, setRequireOnchainIdentity] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -45,6 +52,45 @@ export default function SettingsPage() {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    setAutoKillThreshold(
+      organization?.auto_kill_threshold != null ? String(organization.auto_kill_threshold) : '',
+    );
+    setRequireOnchainIdentity(Boolean(organization?.require_onchain_identity));
+  }, [organization?.auto_kill_threshold, organization?.require_onchain_identity]);
+
+  async function handleResumeGlobalKill() {
+    setGlobalResuming(true);
+    setSecurityError(null);
+    try {
+      await api.resumeGlobalKillswitch();
+      await refreshOrg();
+    } catch (err) {
+      setSecurityError(err instanceof ApiError ? err.message : 'Failed to resume the global kill switch');
+    } finally {
+      setGlobalResuming(false);
+    }
+  }
+
+  async function handleSaveSecurityPolicy() {
+    setSecurityBusy(true);
+    setSecurityError(null);
+    try {
+      const parsed = autoKillThreshold.trim() === '' ? null : parseInt(autoKillThreshold, 10);
+      if (parsed !== null && (!Number.isInteger(parsed) || parsed <= 0)) {
+        setSecurityError('Auto-kill threshold must be a positive whole number, or blank to disable.');
+        return;
+      }
+      await api.updateOrg({ auto_kill_threshold: parsed, require_onchain_identity: requireOnchainIdentity });
+      await refreshOrg();
+      setSaveNotice('Security policy saved');
+    } catch (err) {
+      setSecurityError(err instanceof ApiError ? err.message : 'Failed to save security policy');
+    } finally {
+      setSecurityBusy(false);
+    }
+  }
 
   async function handleUpgrade(plan: string) {
     setBusyPlan(plan);
@@ -130,6 +176,98 @@ export default function SettingsPage() {
                   <dd className="capitalize text-ink">{organization?.subscription_status ?? 'inactive'}</dd>
                 </div>
               </dl>
+            </div>
+
+            <div className="panel border-danger/20 px-5 py-4">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-ink">Kill switch &amp; security policy</h2>
+                  <p className="mt-1 text-xs text-ink-muted">
+                    Global kill switch stops every agent in this organization at once, independent of
+                    each agent&apos;s own status. Auto-kill suspends an agent automatically when it
+                    repeatedly triggers critical prompt-injection blocks.
+                  </p>
+                </div>
+                {organization?.global_kill_active ? (
+                  <button
+                    type="button"
+                    disabled={globalResuming}
+                    onClick={handleResumeGlobalKill}
+                    className="shrink-0 rounded-sm border border-accent/40 px-4 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent-soft disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    {globalResuming ? 'Resuming...' : 'Resume all agents'}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowGlobalKill(true)}
+                    className="shrink-0 rounded-sm border border-danger/40 px-4 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10"
+                  >
+                    Global kill switch
+                  </button>
+                )}
+              </div>
+
+              {organization?.global_kill_active ? (
+                <div className="mb-4 rounded-sm border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                  Global kill switch is ACTIVE{organization.global_kill_reason ? `: ${organization.global_kill_reason}` : ''}.
+                  Every agent in this organization is blocked until it is resumed.
+                </div>
+              ) : null}
+
+              {securityError ? (
+                <div className="mb-4 rounded-sm border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                  {securityError}
+                </div>
+              ) : null}
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-ink">Auto-kill threshold</span>
+                  <input
+                    value={autoKillThreshold}
+                    onChange={(event) => setAutoKillThreshold(event.target.value.replace(/[^0-9]/g, ''))}
+                    placeholder="Disabled"
+                    inputMode="numeric"
+                    className="rounded-md border border-base-border bg-base-panel px-3 py-2 text-sm text-ink outline-none transition-colors placeholder:text-ink-muted focus:border-accent/50"
+                  />
+                  <span className="text-xs text-ink-muted">
+                    Critical prompt-injection blocks within a 15-minute window before an agent is
+                    auto-suspended. Blank disables auto-kill.
+                  </span>
+                </label>
+
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-ink">Require on-chain identity</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={requireOnchainIdentity}
+                    onClick={() => setRequireOnchainIdentity((prev) => !prev)}
+                    className={`w-fit rounded-sm border px-3 py-2 text-sm font-medium transition-colors ${
+                      requireOnchainIdentity
+                        ? 'border-accent/40 bg-accent-soft text-accent'
+                        : 'border-base-border text-ink-muted hover:text-ink'
+                    }`}
+                  >
+                    {requireOnchainIdentity ? 'Required' : 'Optional'}
+                  </button>
+                  <span className="text-xs text-ink-muted">
+                    When required, /v1/events and /v1/prompts/filter must carry a signature from the
+                    agent&apos;s registered on-chain address - closing the gap where any caller holding
+                    the org API key could otherwise submit as any agent_id.
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSaveSecurityPolicy}
+                disabled={securityBusy}
+                className="mt-4 rounded-sm bg-accent px-3 py-1.5 text-sm font-semibold text-base transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {securityBusy ? 'Saving...' : 'Save security policy'}
+              </button>
             </div>
 
             <div className="panel px-5 py-4">
@@ -267,6 +405,22 @@ export default function SettingsPage() {
           </div>
         ) : null}
       </main>
+
+      {showGlobalKill ? (
+        <KillSwitchDialog
+          agentName={organization?.name ?? 'this organization'}
+          title={`Global kill switch: ${organization?.name ?? 'this organization'}`}
+          description="This immediately blocks every agent in this organization, regardless of its individual status. Resuming restores each agent's own prior state exactly."
+          confirmWord="KILL ALL AGENTS"
+          confirmLabel="Activate global kill switch"
+          busyLabel="Activating..."
+          onClose={() => setShowGlobalKill(false)}
+          onConfirm={async (reason) => {
+            await api.killswitchGlobal(reason || undefined);
+            await refreshOrg();
+          }}
+        />
+      ) : null}
     </>
   );
 }

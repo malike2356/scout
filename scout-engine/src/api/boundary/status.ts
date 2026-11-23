@@ -83,7 +83,7 @@ export async function buildStatusResponse(): Promise<StatusResponse> {
     last_heartbeat: Date | null;
   }>(
     `SELECT id, name, status, suspension_reason, last_heartbeat
-     FROM carina_instances
+     FROM connected_agents
      ORDER BY created_at ASC`,
   );
 

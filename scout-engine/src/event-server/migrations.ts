@@ -1,7 +1,7 @@
 // scout-engine/src/event-server/migrations.ts
 // Idempotent schema migrations for the event ingestion server.
 // Safe to run on every server start. Uses IF NOT EXISTS throughout.
-// Tables: security_events, alert_rules, alert_history, kill_switch_state
+// Tables: security_events, alert_rules, alert_history
 import type pg from 'pg';
 
 export async function runMigrations(client: pg.PoolClient): Promise<void> {
@@ -51,20 +51,12 @@ export async function runMigrations(client: pg.PoolClient): Promise<void> {
     )
   `);
 
-  // kill_switch_state; tracks suspension state per Carina instance
-  await client.query(`
-    CREATE TABLE IF NOT EXISTS kill_switch_state (
-      instance_id TEXT PRIMARY KEY,
-      suspended BOOLEAN DEFAULT FALSE,
-      suspended_at TIMESTAMPTZ,
-      suspended_by TEXT,
-      reason TEXT,
-      reactivated_at TIMESTAMPTZ,
-      reactivated_by TEXT,
-      created_at TIMESTAMPTZ DEFAULT NOW(),
-      updated_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
+  // kill_switch_state was created here but never read by any route (dead
+  // schema from the Carina-embedded era). The real, enforced kill switch is
+  // connected_agents.status + organizations.global_kill_active, unified in
+  // ../control/agent-control.ts. Do not recreate it; actively drop it so
+  // any existing dev database self-cleans on next boot.
+  await client.query(`DROP TABLE IF EXISTS kill_switch_state`);
 
   // Indexes (all IF NOT EXISTS)
   await client.query(`
@@ -91,10 +83,5 @@ export async function runMigrations(client: pg.PoolClient): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_alert_history_created_at
       ON alert_history (created_at DESC)
   `);
-  await client.query(`
-    CREATE INDEX IF NOT EXISTS idx_kill_switch_suspended
-      ON kill_switch_state (suspended) WHERE suspended = TRUE
-  `);
-
-  console.log('[scout:migrations] Schema ready (security_events, alert_rules, alert_history, kill_switch_state)');
+  console.log('[scout:migrations] Schema ready (security_events, alert_rules, alert_history)');
 }

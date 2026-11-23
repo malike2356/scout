@@ -32,7 +32,30 @@ export function isKillSwitchActive(status: unknown): boolean {
   return status === 'suspended' || status === 'killed';
 }
 
-export function assertAgentRunnable(agent: Record<string, unknown>): void {
+/**
+ * Checks the org-wide global kill switch first (a single flag, independent
+ * of any one agent's own status), then the agent's own per-agent status.
+ * `organization` is whatever tenantMiddleware/dashboardAuthMiddleware
+ * already attached to the request - no extra query needed here.
+ */
+export function assertAgentRunnable(
+  agent: Record<string, unknown>,
+  organization?: Record<string, unknown> | null,
+): void {
+  if (organization?.global_kill_active) {
+    throw new AgentGuardError(
+      403,
+      'global_kill_switch',
+      'Organization-wide kill switch is active. All agents are blocked until an operator resumes it.',
+      {
+        agent_id: agent.id,
+        kill_switch_active: true,
+        scope: 'global',
+        reason: organization.global_kill_reason ?? null,
+      },
+    );
+  }
+
   const status = String(agent.status ?? '');
   if (isKillSwitchActive(status)) {
     throw new AgentGuardError(
@@ -43,6 +66,9 @@ export function assertAgentRunnable(agent: Record<string, unknown>): void {
         agent_id: agent.id,
         status,
         kill_switch_active: true,
+        scope: 'agent',
+        reason: agent.suspension_reason ?? null,
+        source: agent.kill_source ?? null,
       },
     );
   }

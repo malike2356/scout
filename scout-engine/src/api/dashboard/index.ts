@@ -13,6 +13,7 @@ import {
   killAgentAndPropagateToKeprix,
   resumeAgentAndPropagateToKeprix,
 } from '../../integrations/keprix-connector.js';
+import { suspendAllAgentsForOrg, resumeAllAgentsForOrg, AgentControlError } from '../../control/agent-control.js';
 import { dashboardRepositorySecurityRouter } from './repository-security.js';
 
 export const dashboardRouter: ExpressRouter = Router();
@@ -362,6 +363,7 @@ dashboardRouter.post('/agents/:id/resume', requirePlanFeature('killswitch'), asy
     const { agent, keprix } = await resumeAgentAndPropagateToKeprix({
       organizationId,
       agentId: req.params.id,
+      triggeredBy: 'scout-dashboard',
     });
     res.json({ agent, keprix });
   } catch (err) {
@@ -370,6 +372,61 @@ dashboardRouter.post('/agents/:id/resume', requirePlanFeature('killswitch'), asy
       res.status(404).json({ error: 'not_found', message: 'Agent not found.' });
       return;
     }
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// Global kill switch: org-wide emergency stop, independent of per-agent
+// status (see agent-control.ts and agent-guard.ts - checked before any
+// per-agent status, so it blocks every agent in the org instantly).
+dashboardRouter.post('/killswitch/global', requirePlanFeature('killswitch'), async (req, res) => {
+  try {
+    const organizationId = (req as DashboardRequest).organizationId!;
+    const reason =
+      typeof (req.body as { reason?: unknown })?.reason === 'string' && (req.body as { reason: string }).reason.trim()
+        ? (req.body as { reason: string }).reason.trim()
+        : 'Operator-initiated global kill switch from Scout dashboard';
+
+    const { organization } = await suspendAllAgentsForOrg({
+      organizationId,
+      reason,
+      triggeredBy: 'scout-dashboard',
+    });
+    res.json({ organization: publicOrganization(organization) });
+  } catch (err) {
+    if (err instanceof AgentControlError) {
+      res.status(err.status).json({ error: 'not_found', message: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+dashboardRouter.post('/killswitch/global/resume', requirePlanFeature('killswitch'), async (req, res) => {
+  try {
+    const organizationId = (req as DashboardRequest).organizationId!;
+    const { organization } = await resumeAllAgentsForOrg({ organizationId, triggeredBy: 'scout-dashboard' });
+    res.json({ organization: publicOrganization(organization) });
+  } catch (err) {
+    if (err instanceof AgentControlError) {
+      res.status(err.status).json({ error: 'not_found', message: err.message });
+      return;
+    }
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// Kill-switch audit trail: both agent-scoped and org-wide (global) events.
+dashboardRouter.get('/killswitch/events', async (req, res) => {
+  try {
+    const organizationId = (req as DashboardRequest).organizationId!;
+    const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10) || 50, 200);
+    const events = await db('kill_switch_events')
+      .where({ organization_id: organizationId })
+      .orderBy('created_at', 'desc')
+      .limit(limit);
+    res.json({ events });
+  } catch (err) {
     res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
   }
 });
@@ -412,11 +469,27 @@ dashboardRouter.get('/org', (req, res) => {
 dashboardRouter.patch('/org', async (req, res) => {
   try {
     const organizationId = (req as DashboardRequest).organizationId!;
-    const { name, settings } = (req.body ?? {}) as Record<string, unknown>;
+    const { name, settings, auto_kill_threshold, require_onchain_identity } = (req.body ?? {}) as Record<
+      string,
+      unknown
+    >;
 
     const updates: Record<string, unknown> = {};
     if (typeof name === 'string' && name.trim()) updates.name = name.trim();
     if (settings !== undefined) updates.settings = JSON.stringify(settings);
+    if (auto_kill_threshold !== undefined) {
+      if (auto_kill_threshold === null) {
+        updates.auto_kill_threshold = null;
+      } else if (Number.isInteger(auto_kill_threshold) && (auto_kill_threshold as number) > 0) {
+        updates.auto_kill_threshold = auto_kill_threshold;
+      } else {
+        res.status(400).json({ error: 'internal', message: 'auto_kill_threshold must be a positive integer or null to disable.' });
+        return;
+      }
+    }
+    if (typeof require_onchain_identity === 'boolean') {
+      updates.require_onchain_identity = require_onchain_identity;
+    }
 
     if (Object.keys(updates).length === 0) {
       res.status(400).json({ error: 'internal', message: 'No updatable fields provided.' });

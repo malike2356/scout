@@ -17,9 +17,12 @@ asks (prompt 06) - and surfacing all of it behind the existing
 
 ## Run it
 
+`src/gen/` is committed. A fresh clone can `npm run build` without the OpenShell proto sources. `npm run gen` (`buf generate`) needs `proto/` pointing at `../_vendor/OpenShell/proto`. That tree is not in this public repo, and the symlink is not committed, so `npm run gen` fails on a clone that does not have the vendored source checked out separately. Regenerate only when that schema changes, then commit the new stubs.
+
+The image build copies `src/` and runs `tsc`. It leaves `buf generate` to a workstation that has the vendored proto tree.
+
 ```bash
 npm install
-npm run gen     # buf generate from the vendored proto (../_vendor/OpenShell/proto)
 npm run build
 
 # Postgres holding scout_policy / scout_policy_binding (see sql/0001_scout_policy.sql)

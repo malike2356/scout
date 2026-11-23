@@ -21,6 +21,16 @@ application.
   closing the gap where any caller holding an org's API key could
   otherwise submit events/prompts as any agent under it
 
+## Read next
+
+The bullets above are the map. The contracts and the pitfalls live in the package READMEs:
+
+- Dashboard pages, password change, alert channels, and kill-switch controls: `scout-dashboard/README.md`
+- Client registration, signed requests, and `kill_switch` / `global_kill_switch`: `scout-sdk/README.md`
+- Contract deploy and the engine env vars that anchor an identity: `scout-chain/README.md`
+- Governance service on a fresh clone (generated stubs are already committed): `openshell-governance-service/README.md`
+- Compose constraints (dashboard bind address, governance database and TLS): `deploy/README.md`
+
 ## Research
 
 Scout studies detection under an adaptive adversary: how much of a hostile agent's behaviour can

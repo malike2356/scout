@@ -53,6 +53,26 @@ is what actually calls `registerAgent`/`revokeAgent`/`reactivateAgent` at
 runtime (on an agent's behalf, after verifying its signature), not this
 package.
 
+The committed deployment record is `deployments/sepolia.json` (address, tx hash, block). That file is public chain data. Do not copy the operator private key into it.
+
+## What the engine does with it
+
+`isChainConfigured()` is true only when both `SCOUT_CHAIN_CONTRACT_ADDRESS` and `SCOUT_CHAIN_OPERATOR_PRIVATE_KEY` are set. Optional overrides, with these defaults in `scout-engine/src/blockchain/chainClient.ts`:
+
+- `SCOUT_CHAIN_RPC_URL` — `https://ethereum-sepolia-rpc.publicnode.com`
+- `SCOUT_CHAIN_EXPLORER_BASE` — `https://sepolia.etherscan.io`
+
+Registration is two public API calls, both scoped by the org API key (`Authorization: Bearer sk_live_...` or `X-Scout-Key`):
+
+1. `GET /v1/agents/:id/identity/challenge` returns `{ agent_id, nonce, message, expires_in_seconds: 300 }`. `message` is `scout-identity-register:<agentId>:<nonce>`.
+2. `POST /v1/agents/:id/identity/register` with `{ address, nonce, signature }`. The nonce is consumed once. A bad, reused, or expired nonce, or a signature that does not recover to `address`, returns `400` with `error: "identity_registration_failed"`.
+
+The engine's operator key sends the chain transaction. The agent's key only signs the challenge. When the chain is not configured, the signature is still checked and `chain_address` is stored, but `identity_verified_onchain` stays false and there is no `tx_hash`.
+
+A later per-agent kill or resume syncs that identity: `revokeAgent` on suspend, `reactivateAgent` on resume, only if `identity_verified_onchain` is already true. A chain error is logged and does not roll back the database status. The org-wide global kill flag does not loop agents and does not send those transactions.
+
+Strict mode (`organizations.require_onchain_identity`) checks a separate per-request signature against the registered address. The client shape is in `scout-sdk/README.md`. An agent that was only recorded locally (`verified_onchain: false`) fails that check with "Agent has no verified on-chain identity registered."
+
 ## Why Sepolia, and why a fresh contract instead of a public registry
 
 Sepolia is a free, public Ethereum testnet: real chain semantics, a real

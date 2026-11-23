@@ -1,9 +1,7 @@
 # Production image for the OpenShell governance extension service.
-# src/gen/ (protobuf stubs) is gitignored - a build output, not source - so
-# it must already exist in the build context (run `npm run gen` once on the
-# workstation before building this image; see README.md). It is plain
-# generated TypeScript, so the ordinary tsc build step below picks it up
-# like any other file under src/.
+# src/gen/ (protobuf stubs) is committed. The vendored OpenShell proto
+# source is not in this public repo, so this image does not run `npm run gen`.
+# tsc compiles the committed stubs with the rest of src/. See README.md.
 FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

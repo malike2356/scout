@@ -1,9 +1,8 @@
 # scout-chain
 
 On-chain agent identity registry for Scout (`ScoutAgentIdentity.sol`),
-deployed to the Sepolia testnet. See
-`../docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md` for the full
-design and why this exists; this README is just the how-to-run.
+deployed to the Sepolia testnet. This README covers the how-to-run; see
+the contract's own doc comments for the design rationale.
 
 ## What's here
 
@@ -59,8 +58,8 @@ package.
 Sepolia is a free, public Ethereum testnet: real chain semantics, a real
 block explorer trail (`https://sepolia.etherscan.io`), no real-money risk.
 `ScoutAgentIdentity.sol` is purpose-built for Scout rather than reusing an
-existing standard registry (e.g. ERC-8004) - see the architecture doc,
-Section 4.1, for why: a prior ERC-8004/8126 implementation already exists
-in this codebase's history but is Carina-coupled and answers a different
+existing standard registry (e.g. ERC-8004): a prior ERC-8004/8126
+implementation exists elsewhere in this project's history, but it's
+coupled to an unrelated product's data model and answers a different
 question (attested trust/reputation) than what the kill switch needs
 (is this request actually from the agent it claims to be).

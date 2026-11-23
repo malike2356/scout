@@ -40,9 +40,6 @@ Expect `/health` and `/v1/health` to include `repository_secret_scanning.tables_
 
 ## Repository secret scanning ops
 
-- Scoring: `docs/SECRET-SCAN-SCORING.md`
-- Incident: `docs/INCIDENT-COMMITTED-CREDENTIAL.md`
-- Backup/restore: `docs/BACKUP-RESTORE-SECRET-SCANNING.md`
 - Local delivery: `<workspace-root>/shared/secrets/README.md`
 
 Capacity controls reuse org API rate limits plus ingest caps (`MAX_INGEST_BYTES` 256 KiB, max 500 findings per request).

@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /// @title ScoutAgentIdentity
 /// @notice Minimal on-chain identity registry for Scout-monitored AI agents.
 ///
-/// Design intent (see scout/docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md):
+/// Design intent:
 ///   - Each Scout agent gets a secp256k1 keypair; its address is the agent's
 ///     cryptographic identity, anchored here so no single party (including
 ///     Scout's own database) can silently rewrite an agent's registration or

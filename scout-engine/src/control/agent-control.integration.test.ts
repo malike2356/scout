@@ -43,9 +43,8 @@ async function runMigrations(): Promise<void> {
   }
 
   // security_events itself is normally created by event-server/migrations.ts
-  // at server boot (a separate migration path from this file-based one, see
-  // docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md); recordAudit()
-  // writes to it, so this test DB needs it too.
+  // at server boot (a separate migration path from this file-based one);
+  // recordAudit() writes to it, so this test DB needs it too.
   await db.raw(`
     CREATE TABLE IF NOT EXISTS security_events (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

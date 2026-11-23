@@ -2,8 +2,8 @@
 
 A runtime security/governance engine for AI agents: prompt filtering, event ingest, posture
 scoring, alerting, and a kill switch for agents that misbehave. Originally built out as a
-commercial SaaS product (see `docs/history/saas-spec-master.md` for that build-out's spec and
-history); it is now a personal research project being written up for a PhD application.
+commercial SaaS product; it is now a personal research project being written up for a PhD
+application.
 
 ## What it does
 
@@ -14,8 +14,8 @@ history); it is now a personal research project being written up for a PhD appli
 - Enforces a kill switch at three levels: per-agent (dashboard/admin API),
   organization-wide (one flag blocks every agent instantly), and
   policy-triggered (auto-suspends an agent after repeated critical
-  prompt-injection blocks) - unified in one audited path, see
-  `docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md`
+  prompt-injection blocks) - unified in one audited path
+  (`scout-engine/src/control/agent-control.ts`)
 - Gives each agent a verifiable cryptographic identity, anchored in a
   purpose-built registry contract (`scout-chain/`) on the Sepolia testnet,
   closing the gap where any caller holding an org's API key could
@@ -68,5 +68,4 @@ SCOUT_API_BASE=http://localhost:4444 SCOUT_E2E_ALLOW_PLAN_OVERRIDE=true bash scr
 Not deployed anywhere. The multi-tenant/billing layer (`scout-engine/src/api/billing.ts`,
 `webhooks/stripe.ts`, `lib/plans.ts`, `middleware/plan-enforce.ts`, `scout-dashboard`'s
 signup/onboarding pages) is left in place as-built but unused - it's part of the engineering
-history of the project, not something currently offered or sold. See `docs/history/` for the
-original SaaS-ification spec.
+history of the project, not something currently offered or sold.

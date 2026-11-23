@@ -68,8 +68,7 @@ class Scout:
         self._session = requests.Session()
 
     # ------------------------------------------------------------------
-    # Blockchain agent identity (ScoutAgentIdentity.sol, Sepolia - see
-    # scout-chain/ and docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md)
+    # Blockchain agent identity (ScoutAgentIdentity.sol, Sepolia - see scout-chain/)
     # ------------------------------------------------------------------
 
     def get_identity_challenge(self, agent_id: str) -> Dict[str, Any]:

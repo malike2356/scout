@@ -1,7 +1,7 @@
 -- Repository secret scanning (standalone Scout).
 -- Lifecycle truth lives in repo_secret_* tables. Optional mirror rows in findings
 -- (finding_type = exposed_secret) feed existing Scout Score exposure without
--- duplicating remediation state. See src/secret-scanning/DECISION.md.
+-- duplicating remediation state.
 
 -- Agent and secret-scan paths insert findings without a network target/scan_run.
 ALTER TABLE findings ALTER COLUMN scan_run_id DROP NOT NULL;

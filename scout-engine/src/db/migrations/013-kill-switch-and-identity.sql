@@ -2,8 +2,7 @@
 -- Context: connected_agents.status was already the real per-agent kill
 -- switch enforced by agent-guard.ts; this migration extends it (reason,
 -- source, global org-wide kill, on-chain identity anchoring) and adds the
--- audit trail that was previously missing. See
--- scout/docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md.
+-- audit trail that was previously missing.
 
 -- Per-agent kill switch: persist why/when/by-whom/how it was triggered.
 ALTER TABLE connected_agents ADD COLUMN IF NOT EXISTS suspension_reason TEXT;

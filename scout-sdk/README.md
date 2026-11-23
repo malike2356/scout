@@ -7,7 +7,7 @@ Local: set `SCOUT_API_URL=http://localhost:4444`.
 
 ## Install (private pilot)
 
-See [PUBLISH.md](./PUBLISH.md). Until npm publish:
+Until npm publish:
 
 ```bash
 npm run build && npm pack

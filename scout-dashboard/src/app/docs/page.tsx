@@ -51,7 +51,7 @@ export default function DocsPage() {
             <ol className="mt-4 flex max-w-2xl flex-col gap-2 text-sm text-ink-muted">
               <li>1. Create an account and organization.</li>
               <li>2. Generate an API key from the onboarding flow or the API Keys page.</li>
-              <li>3. Install the SDK (private pack: see scout-sdk/PUBLISH.md).</li>
+              <li>3. Install the SDK (private pack - see scout-sdk/README.md).</li>
               <li>4. Call registerAgent, assertAgentRunnable, filter, then trackEvent around tools.</li>
               <li>5. Watch agents and alerts on the dashboard. Kill switch returns HTTP 403 kill_switch.</li>
             </ol>

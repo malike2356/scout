@@ -394,8 +394,7 @@ publicV1Router.get('/agents/:id/status', async (req, res) => {
 });
 
 // ════════════════════════════════════════════
-// Blockchain agent identity (ScoutAgentIdentity.sol, Sepolia - see
-// scout-chain/ and docs/architecture/KILL-SWITCH-AND-BLOCKCHAIN-IDENTITY.md)
+// Blockchain agent identity (ScoutAgentIdentity.sol, Sepolia - see scout-chain/)
 // ════════════════════════════════════════════
 
 // Step 1: the agent/SDK requests a one-time nonce to sign, proving it

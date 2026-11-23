@@ -18,6 +18,14 @@ __pycache__/
 /saas-spec-master.md
 /marketing/
 
+# Narrative/planning docs and AI-agent instructions - kept locally, not
+# pushed to the public repo (2026-11-23 GitHub cleanup). The local copies
+# are untouched; this just stops them from being re-staged.
+/AGENTS.md
+/docs/
+/scout-sdk/PUBLISH.md
+/scout-engine/src/secret-scanning/DECISION.md
+
 # ---- Public GitHub hygiene (VERLOX hard rule) ----
 # Canonical: <workspace-root>/shared/workspace-governance/PUBLIC-GITHUB-HYGIENE.md
 # Only ship files required to build, run, test, or operate the product.

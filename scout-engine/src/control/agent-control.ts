@@ -1,9 +1,8 @@
 // scout-engine/src/control/agent-control.ts
 // The single, unified kill-switch implementation. Supersedes the old
 // instance-control.ts (which read a `carina_instances` table that does not
-// exist in a standalone Scout database - see
-// docs/decisions/SUPERSESSION-MAP-2026-10-24.md) and the dead
-// kill_switch_state table. Everything else that triggers a kill - the
+// exist in a standalone Scout database) and the dead kill_switch_state
+// table. Everything else that triggers a kill - the
 // dashboard, the admin API, Keprix propagation, policy auto-kill - now
 // calls into this module so there is exactly one code path that decides
 // what "an agent is killed" means.

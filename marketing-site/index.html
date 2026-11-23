@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06090f">
+  <title>Labyrinth Scout: AI agent governance research</title>
+  <meta name="description" content="Labyrinth Scout: a personal research project on runtime governance and decision provenance for AI agents, built as an open extension rather than a walled product.">
+  <meta property="og:title" content="Labyrinth Scout: AI agent governance research">
+  <meta property="og:description" content="A personal research project building a decision-provenance layer for AI agents, built on an open sandbox platform rather than a walled product.">
+  <meta property="og:url" content="https://labyrinthscout.com">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Labyrinth Scout: AI agent governance research">
+  <meta name="twitter:description" content="Governance for AI agents, without the vendor lock-in. A personal research project, not a commercial product.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" href="/assets/pwa/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/pwa/favicon.ico" sizes="any">
+  <link rel="icon" href="/assets/pwa/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/assets/pwa/apple-touch-icon.png">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.168.0/build/three.module.js"
+    }
+  }
+  </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:           #06090f;
+      --bg-lift:      #0c1118;
+      --bg-card:      #111722;
+      --border:       rgba(255,255,255,0.07);
+      --border-mid:   rgba(255,255,255,0.12);
+      --green:        #16c97e;
+      --text-primary: #f0f4f8;
+      --text-mid:     #8a9bb0;
+      --text-dim:     #4d6070;
+      --ff-sans:      'Inter', system-ui, sans-serif;
+      --r:            6px;
+      --r-md:         10px;
+      --r-lg:         16px;
+      --transition:   200ms cubic-bezier(0.4,0,0.2,1);
+    }
+
+    html { scroll-behavior: smooth; overflow-x: clip; max-width: 100%; }
+
+    body {
+      font-family: var(--ff-sans);
+      background: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.65;
+      overflow-x: clip;
+      font-weight: 400;
+      width: 100%;
+      max-width: 100%;
+    }
+
+    #dotted-surface { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+    #dotted-surface canvas { display: block; width: 100%; height: 100%; }
+
+    .surface-vignette {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background: radial-gradient(ellipse at 50% 35%, rgba(22,201,126,0.06) 0%, transparent 45%),
+                  radial-gradient(ellipse at 50% 100%, rgba(6, 9, 15, 0.25) 0%, transparent 65%);
+    }
+
+    @media (prefers-reduced-motion: reduce) { #dotted-surface { display: none; } }
+
+    .z1 { position: relative; z-index: 1; }
+    .container { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* --- NAV --- */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
+      height: 60px;
+      background: rgba(6,9,15,0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
+      transition: border-color var(--transition);
+    }
+    .nav-inner {
+      height: 100%; display: flex; align-items: center; justify-content: space-between;
+      max-width: 1200px; margin: 0 auto; padding: 0 1.5rem;
+    }
+    .nav-logo { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); text-decoration: none; letter-spacing: -0.01em; }
+    .nav-logo span { color: var(--green); }
+    .nav-links { display: flex; align-items: center; gap: 1.75rem; }
+    .nav-links a { color: var(--text-mid); font-size: 0.8125rem; font-weight: 400; text-decoration: none; transition: color var(--transition); }
+    .nav-links a:hover { color: var(--text-primary); }
+    .nav-links a.nav-cta, .nav-links a.nav-cta:hover, .nav-links a.nav-cta:visited {
+      background: var(--green); color: #06090f; padding: 0.4rem 1rem; border-radius: var(--r);
+      font-size: 0.8125rem; font-weight: 600; text-decoration: none; transition: opacity var(--transition);
+    }
+    .nav-links a.nav-cta:hover { opacity: 0.85; }
+    .nav-hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 0.5rem; }
+    .nav-hamburger span { display: block; width: 22px; height: 2px; background: var(--text-mid); border-radius: 2px; }
+
+    @media (max-width: 768px) {
+      .nav-links { display: none; }
+      .nav-hamburger { display: flex; }
+    }
+
+    .nav-mobile-panel {
+      display: none; position: fixed; top: 60px; left: 0; right: 0;
+      background: rgba(6,9,15,0.97); backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border); padding: 1.5rem; z-index: 190;
+      flex-direction: column; gap: 0.25rem;
+    }
+    .nav-mobile-panel.open { display: flex; }
+    .nav-mobile-panel a { color: var(--text-mid); text-decoration: none; font-size: 0.95rem; padding: 0.65rem 0; border-bottom: 1px solid var(--border); transition: color var(--transition); }
+    .nav-mobile-panel a:last-child { border-bottom: none; }
+    .nav-mobile-panel a:hover { color: var(--text-primary); }
+    .nav-mobile-panel a.nav-mobile-cta, .nav-mobile-panel a.nav-mobile-cta:hover, .nav-mobile-panel a.nav-mobile-cta:visited {
+      display: block; text-align: center; background: var(--green); color: #06090f; font-weight: 600;
+      padding: 0.75rem; border-radius: var(--r-md); margin-top: 1rem; border-bottom: none !important;
+    }
+    .nav-mobile-panel a.nav-mobile-cta:hover { opacity: 0.88; }
+
+    /* --- HERO --- */
+    .hero { min-height: 100vh; display: flex; align-items: center; padding: 7rem 0 5rem; position: relative; z-index: 1; }
+    .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; }
+    @media (max-width: 768px) {
+      .hero-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+      .hero-visual { order: -1; }
+    }
+    .hero-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.72rem;
+      letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); font-weight: 500;
+      margin-bottom: 1.75rem; padding: 0.35rem 0.85rem; border: 1px solid rgba(22,201,126,0.25);
+      border-radius: 999px; background: rgba(22,201,126,0.06);
+    }
+    .hero-eyebrow i { font-size: 0.85rem; }
+    .hero-h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); font-weight: 700; line-height: 1.06; letter-spacing: -0.03em; margin-bottom: 1.5rem; color: var(--text-primary); }
+    .hero-h1 em { color: var(--green); font-style: normal; }
+    .hero-tagline { font-size: 1rem; font-weight: 600; color: var(--text-mid); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 1.25rem; }
+    .hero-tagline span { display: inline-block; padding: 0 0.6rem; color: var(--text-dim); }
+    .hero-sub { font-size: 1rem; color: var(--text-mid); max-width: 480px; line-height: 1.7; margin-bottom: 2.5rem; }
+    .hero-actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+
+    .btn-primary {
+      display: inline-flex; align-items: center; gap: 0.5rem; background: var(--green); color: #06090f;
+      padding: 0.75rem 1.5rem; border-radius: var(--r-md); font-size: 0.9rem; font-weight: 600;
+      text-decoration: none; transition: opacity var(--transition), transform var(--transition);
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); color: #06090f; }
+    .btn-secondary, .btn-outline {
+      display: inline-flex; align-items: center; gap: 0.5rem; background: transparent; color: var(--text-mid);
+      padding: 0.75rem 1.5rem; border-radius: var(--r-md); font-size: 0.9rem; font-weight: 500;
+      text-decoration: none; border: 1px solid var(--border-mid); transition: color var(--transition), border-color var(--transition);
+    }
+    .btn-secondary:hover, .btn-outline:hover { color: var(--text-primary); border-color: var(--green); }
+
+    .hero-callouts { display: flex; gap: 0.65rem; flex-wrap: wrap; }
+    .hero-callout {
+      display: flex; align-items: center; gap: 0.45rem; padding: 0.35rem 0.75rem; border-radius: var(--r);
+      background: var(--bg-lift); border: 1px solid var(--border); font-size: 0.75rem; color: var(--text-mid); font-weight: 500;
+    }
+    .hero-callout i { color: var(--green); font-size: 0.85rem; }
+
+    .hero-visual { display: flex; align-items: center; justify-content: center; }
+    .radar-scene { position: relative; width: 480px; height: 480px; max-width: min(92vw, 480px); max-height: min(92vw, 480px); }
+    .radar-core { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .radar-sweep { position: absolute; inset: 0; animation: radar-rotate 4s linear infinite; }
+    .radar-beam { position: absolute; top: 50%; left: 50%; width: 50%; height: 2px; transform-origin: left center; background: linear-gradient(to right, transparent, rgba(22,201,126,0.8)); }
+    @keyframes radar-rotate { to { transform: rotate(360deg); } }
+    .radar-ring { position: absolute; border-radius: 50%; border: 1px solid; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+    .radar-agents { position: absolute; inset: 0; }
+    .radar-agent {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(calc(var(--rx, 0px) - 50%), calc(var(--ry, 0px) - 50%));
+      display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+      animation: agent-appear 0.6s ease calc(var(--d, 0ms)) backwards;
+    }
+    @keyframes agent-appear {
+      from { opacity: 0; transform: translate(calc(var(--rx, 0px) - 50%), calc(var(--ry, 0px) - 50%)) scale(0.5); }
+      to   { opacity: 1; transform: translate(calc(var(--rx, 0px) - 50%), calc(var(--ry, 0px) - 50%)) scale(1); }
+    }
+    .radar-agent-icon {
+      width: 40px; height: 40px; border-radius: 50%; background: var(--bg-card); border: 2px solid rgba(22,201,126,0.45);
+      display: flex; align-items: center; justify-content: center; font-size: 1rem; color: var(--green);
+      box-shadow: 0 0 10px rgba(22,201,126,0.12);
+    }
+    .radar-agent--featured { z-index: 2; }
+    .radar-agent--featured .radar-agent-icon {
+      width: 46px; height: 46px; border: 2px solid rgba(22,201,126,0.9); color: var(--green);
+      background: rgba(22,201,126,0.14); font-size: 1.1rem;
+      box-shadow: 0 0 0 3px rgba(22,201,126,0.1), 0 0 18px rgba(22,201,126,0.28);
+      animation: agent-pulse 2.2s ease-in-out infinite;
+    }
+    @keyframes agent-pulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(22,201,126,0.1), 0 0 16px rgba(22,201,126,0.25); transform: scale(1); }
+      50% { box-shadow: 0 0 0 6px rgba(22,201,126,0.14), 0 0 24px rgba(22,201,126,0.4); transform: scale(1.06); }
+    }
+    .radar-agent-name { font-size: 0.72rem; color: var(--text-mid); letter-spacing: 0.05em; font-weight: 500; }
+    .radar-agent--featured .radar-agent-name { font-size: 0.76rem; color: var(--text-primary); font-weight: 600; }
+    .radar-floor { position: absolute; bottom: -20px; left: 10%; width: 80%; height: 20px; background: radial-gradient(ellipse at center, rgba(22,201,126,0.12) 0%, transparent 70%); }
+
+    /* --- SHARED SECTION STYLES --- */
+    .section { padding: 7rem 0; position: relative; z-index: 1; }
+    .section-lift { background: var(--bg-lift); }
+    .section-dark { background: var(--bg); }
+    .section-eyebrow {
+      display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.7rem; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--green); font-weight: 500; margin-bottom: 1.25rem;
+    }
+    .section-h2 { font-size: clamp(1.9rem, 3.5vw, 2.9rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; color: var(--text-primary); margin-bottom: 1rem; }
+    .section-h2 em { color: var(--green); font-style: normal; }
+    .section-sub { font-size: 1rem; color: var(--text-mid); max-width: 560px; line-height: 1.7; margin-bottom: 2.5rem; }
+
+    /* --- WHAT-IT-IS SPLIT --- */
+    .split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 2.5rem; align-items: start; }
+    @media (max-width: 768px) { .split { grid-template-columns: 1fr; } }
+    .fact-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.75rem;
+    }
+    .fact-card p { color: var(--text-mid); font-size: 0.95rem; margin-bottom: 1rem; }
+    .fact-card p:last-child { margin-bottom: 0; }
+    .fact-list { list-style: none; }
+    .fact-list li { display: flex; gap: 0.7rem; padding: 0.85rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; color: var(--text-mid); }
+    .fact-list li:last-child { border-bottom: none; padding-bottom: 0; }
+    .fact-list strong { color: var(--text-primary); font-weight: 600; min-width: 100px; flex-shrink: 0; }
+
+    /* --- BENEFITS GRID --- */
+    .benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 768px) { .benefit-grid { grid-template-columns: 1fr; } }
+    .benefit-card {
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 1.9rem;
+      transition: border-color var(--transition), transform var(--transition);
+    }
+    .benefit-card:hover { border-color: var(--green); transform: translateY(-2px); }
+    .benefit-icon {
+      width: 42px; height: 42px; border-radius: var(--r-md); display: flex; align-items: center; justify-content: center;
+      background: rgba(22,201,126,0.1); color: var(--green); margin-bottom: 1.1rem;
+    }
+    .benefit-card h3 { font-size: 1.08rem; margin-bottom: 0.6rem; font-weight: 600; }
+    .benefit-card p { color: var(--text-mid); font-size: 0.92rem; }
+
+    /* --- FLOW DIAGRAM --- */
+    .flow-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 2rem 1.5rem; overflow-x: auto; }
+    .flow { display: flex; align-items: stretch; gap: 0; min-width: 660px; }
+    .flow .step { flex: 1; background: var(--bg-lift); border: 1px solid var(--border); border-radius: var(--r-md); padding: 1rem 0.9rem; text-align: center; font-size: 0.85rem; }
+    .flow .step .step-label { display: block; color: var(--green); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.4rem; font-weight: 600; }
+    .flow .arrow { display: flex; align-items: center; justify-content: center; width: 2.25rem; color: var(--text-dim); flex-shrink: 0; }
+    .flow-caption { color: var(--text-mid); font-size: 0.9rem; margin-top: 1.5rem; }
+
+    /* --- ROADMAP TIMELINE --- */
+    .timeline { position: relative; padding-left: 2.75rem; }
+    .timeline::before { content: ""; position: absolute; left: 0.95rem; top: 0.4rem; bottom: 0.4rem; width: 2px; background: linear-gradient(to bottom, var(--green), var(--border)); }
+    .timeline-item { position: relative; padding-bottom: 2.1rem; }
+    .timeline-item:last-child { padding-bottom: 0; }
+    .timeline-item::before { content: ""; position: absolute; left: -2.75rem; top: 0.2rem; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--bg); border: 2px solid var(--border); }
+    .timeline-item.active::before { border-color: var(--green); box-shadow: 0 0 0 4px rgba(22,201,126,0.12); }
+    .timeline-item .stage-num { position: absolute; left: -2.46rem; top: 0.5rem; width: 1.3rem; text-align: center; font-size: 0.75rem; color: var(--text-mid); font-weight: 600; }
+    .stage-title { font-weight: 600; font-size: 1.02rem; display: block; margin-bottom: 0.3rem; color: var(--text-primary); }
+    .stage-body { color: var(--text-mid); font-size: 0.93rem; max-width: 560px; }
+    .stage-tag {
+      display: inline-block; font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--text-dim); border: 1px solid var(--border-mid); border-radius: 999px; padding: 0.15rem 0.55rem;
+      margin-left: 0.5rem; vertical-align: middle;
+    }
+    .timeline-item.active .stage-tag { color: var(--green); border-color: rgba(22,201,126,0.4); }
+    .roadmap-note { margin-top: 2.5rem; color: var(--text-dim); font-size: 0.85rem; border-top: 1px solid var(--border); padding-top: 1.5rem; }
+
+    /* --- CTA --- */
+    .cta-section { background: transparent; border-top: 1px solid var(--border); padding: 7rem 0; text-align: center; position: relative; z-index: 1; overflow: hidden; }
+    .cta-section::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: min(700px, 100vw); height: 400px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(22,201,126,0.08) 0%, transparent 70%); pointer-events: none;
+    }
+    .cta-h2 { font-size: clamp(2rem, 4.5vw, 3rem); font-weight: 700; letter-spacing: -0.025em; line-height: 1.1; color: var(--text-primary); margin-bottom: 1.25rem; }
+    .cta-sub { font-size: 1rem; color: var(--text-mid); max-width: 480px; margin: 0 auto; line-height: 1.7; }
+
+    /* --- FOOTER --- */
+    footer { background: rgba(6, 9, 15, 0.2); backdrop-filter: blur(3px); border-top: 1px solid var(--border); padding: 3.5rem 0 2rem; position: relative; z-index: 1; }
+    .footer-inner { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2.5rem; }
+    @media (max-width: 520px) { .footer-inner { grid-template-columns: 1fr; gap: 1.5rem; } }
+    .footer-logo { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); text-decoration: none; display: block; margin-bottom: 0.85rem; }
+    .footer-logo span { color: var(--green); }
+    .footer-tagline { font-size: 0.8rem; color: var(--text-mid); line-height: 1.6; max-width: 320px; }
+    .footer-col h4 { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 1rem; }
+    .footer-col a { display: block; font-size: 0.83rem; color: var(--text-mid); text-decoration: none; margin-bottom: 0.6rem; transition: color var(--transition); }
+    .footer-col a:hover { color: var(--text-primary); }
+    .footer-bottom { padding-top: 2rem; border-top: 1px solid var(--border); font-size: 0.75rem; color: var(--text-dim); }
+
+    .fade-up { opacity: 0; transform: translateY(24px); transition: opacity 0.55s ease, transform 0.55s ease; }
+    .fade-up.visible { opacity: 1; transform: none; }
+  </style>
+</head>
+<body>
+
+<div id="dotted-surface"></div>
+<div class="surface-vignette" aria-hidden="true"></div>
+
+<nav id="main-nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">Scout<span>.</span></a>
+    <div class="nav-links">
+      <a href="#what">What</a>
+      <a href="#benefits">Benefits</a>
+      <a href="#how">How</a>
+      <a href="#question">Research</a>
+      <a href="#roadmap">Roadmap</a>
+      <a href="https://github.com/malike2356/scout" class="nav-cta" target="_blank" rel="noopener">GitHub</a>
+    </div>
+    <button class="nav-hamburger" id="nav-hamburger" aria-label="Open menu" aria-expanded="false" type="button">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="nav-mobile-panel" id="nav-mobile-panel" aria-hidden="true">
+  <a href="#what">What</a>
+  <a href="#benefits">Benefits</a>
+  <a href="#how">How</a>
+  <a href="#question">Research</a>
+  <a href="#roadmap">Roadmap</a>
+  <a href="https://github.com/malike2356/scout" class="nav-mobile-cta" target="_blank" rel="noopener">GitHub</a>
+</div>
+
+<!-- HERO -->
+<section class="hero z1">
+  <div class="container">
+    <div class="hero-grid">
+      <div class="hero-text">
+        <div class="hero-eyebrow">
+          <i class="ti ti-shield-bolt"></i>
+          Personal research project &middot; not a commercial product
+        </div>
+        <h1 class="hero-h1">
+          Governance for AI agents,<br>
+          <em>without the vendor lock-in.</em>
+        </h1>
+        <div class="hero-tagline">
+          Open extension<span>&middot;</span>Not a walled product
+        </div>
+        <p class="hero-sub">
+          Scout is a research project building a decision-provenance layer for AI agents: an open
+          extension to an existing sandbox platform, not a product tied to one agent vendor.
+        </p>
+        <div class="hero-actions">
+          <a href="https://github.com/malike2356/scout" class="btn-primary" target="_blank" rel="noopener">
+            <i class="ti ti-brand-github"></i>
+            View on GitHub
+          </a>
+          <a href="#what" class="btn-secondary">
+            <i class="ti ti-sparkles"></i>
+            What it is
+          </a>
+        </div>
+        <div class="hero-callouts">
+          <div class="hero-callout"><i class="ti ti-brand-open-source"></i> Open-source base</div>
+          <div class="hero-callout"><i class="ti ti-robot"></i> Agent-agnostic</div>
+          <div class="hero-callout"><i class="ti ti-eye"></i> Evidence, not just logs</div>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <div class="radar-scene">
+          <div class="radar-core">
+            <div class="radar-sweep"><div class="radar-beam"></div></div>
+            <div class="radar-ring" style="width:6rem;height:6rem;border-color:rgba(22,201,126,0.90);--n:1"></div>
+            <div class="radar-ring" style="width:12rem;height:12rem;border-color:rgba(22,201,126,0.75);--n:2"></div>
+            <div class="radar-ring" style="width:18rem;height:18rem;border-color:rgba(22,201,126,0.55);--n:3"></div>
+            <div class="radar-ring" style="width:24rem;height:24rem;border-color:rgba(22,201,126,0.40);--n:4"></div>
+            <div class="radar-ring" style="width:30rem;height:30rem;border-color:rgba(22,201,126,0.25);--n:5"></div>
+          </div>
+          <div class="radar-agents">
+            <div class="radar-agent radar-agent--featured" style="--d:200ms;--rx:0px;--ry:-45px">
+              <div class="radar-agent-icon"><i class="ti ti-robot"></i></div>
+              <span class="radar-agent-name">Your agent</span>
+            </div>
+            <div class="radar-agent" style="--d:575ms;--rx:112px;--ry:-81px">
+              <div class="radar-agent-icon"><i class="ti ti-terminal-2"></i></div>
+              <span class="radar-agent-name">Claude Code</span>
+            </div>
+            <div class="radar-agent" style="--d:650ms;--rx:112px;--ry:81px">
+              <div class="radar-agent-icon"><i class="ti ti-code"></i></div>
+              <span class="radar-agent-name">Codex</span>
+            </div>
+            <div class="radar-agent" style="--d:300ms;--rx:-43px;--ry:-131px">
+              <div class="radar-agent-icon"><i class="ti ti-brand-open-source"></i></div>
+              <span class="radar-agent-name">OpenCode</span>
+            </div>
+            <div class="radar-agent" style="--d:500ms;--rx:-43px;--ry:131px">
+              <div class="radar-agent-icon"><i class="ti ti-compass"></i></div>
+              <span class="radar-agent-name">Copilot CLI</span>
+            </div>
+          </div>
+          <div class="radar-floor"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT IT IS -->
+<section id="what" class="section section-lift">
+  <div class="container">
+    <div class="section-eyebrow"><i class="ti ti-route"></i> What it is</div>
+    <h2 class="section-h2">An extension, <em>not a reinvention</em></h2>
+    <p class="section-sub">
+      Rather than building a new sandbox for AI agents from scratch, Scout extends an existing one,
+      so the governance layer doesn't depend on reinventing the hard parts that are already solved.
+    </p>
+    <div class="split">
+      <div class="fact-card fade-up">
+        <p>
+          Scout extends <a href="https://github.com/NVIDIA/OpenShell" target="_blank" rel="noopener" style="color:var(--green);">NVIDIA OpenShell</a>,
+          an open-source (Apache 2.0) sandbox and gateway for AI agents that already supports several
+          different agent harnesses out of the box.
+        </p>
+        <p>
+          Scout registers as an extension inside OpenShell's own decision path. Whenever an agent
+          tries to cross a boundary (create a sandbox, attach a tool, reach a network service, pick
+          up a credential), Scout is one of the things asked, and the thing that remembers what was
+          decided and why.
+        </p>
+      </div>
+      <div class="fact-card fade-up">
+        <ul class="fact-list">
+          <li><strong>Built on</strong> NVIDIA OpenShell (Apache 2.0, open source)</li>
+          <li><strong>Operates at</strong> the sandbox / network / credential boundary</li>
+          <li><strong>Not</strong> a new agent framework, and not an enforcement rewrite</li>
+          <li><strong>Adds</strong> durable decision records and consequence linkage</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BENEFITS -->
+<section id="benefits" class="section section-dark">
+  <div class="container">
+    <div class="section-eyebrow"><i class="ti ti-users"></i> Who it benefits</div>
+    <h2 class="section-h2">What it's <em>for</em></h2>
+    <p class="section-sub">
+      Most AI agent safety tooling is wired into one specific agent framework: swap the agent, lose
+      the governance. Scout's layer sits underneath that choice.
+    </p>
+    <div class="benefit-grid">
+      <div class="benefit-card fade-up">
+        <div class="benefit-icon"><i class="ti ti-replace"></i></div>
+        <h3>Portability</h3>
+        <p>
+          The same governance and evidence layer keeps working even if the agent running inside it
+          changes, because it's built on a substrate designed to support more than one agent, rather
+          than hooks specific to a single vendor.
+        </p>
+      </div>
+      <div class="benefit-card fade-up">
+        <div class="benefit-icon"><i class="ti ti-file-search"></i></div>
+        <h3>A real answer to "why was this allowed?"</h3>
+        <p>
+          Enforcement alone only tells you a boundary was blocked or allowed. Scout keeps a durable,
+          queryable record of the decision and links it to what happened afterward, so a review can
+          ask "which decision let this happen," not just "what happened."
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="section section-lift">
+  <div class="container">
+    <div class="section-eyebrow"><i class="ti ti-shield-lock"></i> How it works</div>
+    <h2 class="section-h2">Where <em>Scout</em> sits</h2>
+    <p class="section-sub">
+      The sandboxing and enforcement itself (who's allowed to do what, signed policy, credential
+      handling) is OpenShell's job, and it's already solid. Scout's own contribution is narrower
+      and specific.
+    </p>
+    <div class="flow-wrap fade-up">
+      <div class="flow">
+        <div class="step"><span class="step-label">01</span>Agent</div>
+        <div class="arrow"><i class="ti ti-arrow-right"></i></div>
+        <div class="step"><span class="step-label">02</span>Sandbox boundary<br>(enforced by OpenShell)</div>
+        <div class="arrow"><i class="ti ti-arrow-right"></i></div>
+        <div class="step"><span class="step-label">03</span>Scout evaluates &amp;<br>records the decision</div>
+        <div class="arrow"><i class="ti ti-arrow-right"></i></div>
+        <div class="step"><span class="step-label">04</span>Evidence store</div>
+        <div class="arrow"><i class="ti ti-arrow-right"></i></div>
+        <div class="step"><span class="step-label">05</span>Linked to what<br>happened next</div>
+      </div>
+      <p class="flow-caption">
+        General-purpose enforcement tooling doesn't keep this history around. Scout's job is durable
+        decision provenance, and tying a decision to its real-world consequence.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- RESEARCH QUESTION / RELATED WORK -->
+<section id="question" class="section section-dark">
+  <div class="container">
+    <div class="section-eyebrow"><i class="ti ti-certificate"></i> The research question</div>
+    <h2 class="section-h2">What's actually <em>being tested</em></h2>
+    <p class="section-sub">
+      Stated plainly: can a decision-provenance and consequence-linkage layer be added to an existing
+      agent-governance substrate without forking it, while staying provably independent of any
+      specific agent? That's the falsifiable claim this project is testing, not a finished result.
+    </p>
+    <div class="fact-card fade-up">
+      <p>This sits next to existing work rather than instead of it:</p>
+      <ul class="fact-list">
+        <li><strong>OpenShell</strong> already enforces sandbox boundaries with signed policy. It
+          doesn't keep a durable, queryable record of why a boundary was drawn, or link it to what
+          happened next. That gap is this project's focus, not a rebuild of enforcement.</li>
+        <li><strong>ERC-8004 / 8126</strong> style standards address a different question: an agent's
+          own cryptographic identity and reputation, verified on-chain. That's about who an agent is,
+          not why a particular boundary decision was permitted.</li>
+        <li><strong>General-purpose LLM guardrails</strong> filter prompts and outputs at the content
+          layer. Scout operates one layer down, at the sandbox and credential boundary, and has no
+          view of message content at all.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ROADMAP -->
+<section id="roadmap" class="section section-dark">
+  <div class="container">
+    <div class="section-eyebrow"><i class="ti ti-history"></i> Roadmap</div>
+    <h2 class="section-h2">Where this is <em>going</em></h2>
+    <p class="section-sub">
+      A roadmap, not a changelog: nothing below is claimed as finished until it's been verified.
+    </p>
+    <div class="timeline">
+      <div class="timeline-item active fade-up">
+        <span class="stage-num">1</span>
+        <span class="stage-title">Confirm the baseline<span class="stage-tag">in progress</span></span>
+        <span class="stage-body">Verify exactly what OpenShell already provides for free, so Scout only builds what's genuinely missing rather than duplicating it.</span>
+      </div>
+      <div class="timeline-item fade-up">
+        <span class="stage-num">2</span>
+        <span class="stage-title">Register the extension<span class="stage-tag">planned</span></span>
+        <span class="stage-body">Stand up Scout as a real OpenShell extension service, answering both the control-plane and data-plane contracts, inside OpenShell's own latency budget.</span>
+      </div>
+      <div class="timeline-item fade-up">
+        <span class="stage-num">3</span>
+        <span class="stage-title">Durable evidence<span class="stage-tag">planned</span></span>
+        <span class="stage-body">Record boundary decisions in a permanent, queryable store (not just a log line) without slowing down the decision path itself.</span>
+      </div>
+      <div class="timeline-item fade-up">
+        <span class="stage-num">4</span>
+        <span class="stage-title">Consequence linkage<span class="stage-tag">planned</span></span>
+        <span class="stage-body">Connect a decision to what the agent actually did afterward, so an incident can be traced back to the decision that permitted it.</span>
+      </div>
+      <div class="timeline-item fade-up">
+        <span class="stage-num">5</span>
+        <span class="stage-title">Prove agent-independence<span class="stage-tag">planned</span></span>
+        <span class="stage-body">Run two genuinely different agent harnesses against one unmodified Scout service and confirm the same policy produces the same verdicts: the real test of "works with any agent," not just a design claim.</span>
+      </div>
+      <div class="timeline-item fade-up">
+        <span class="stage-num">6</span>
+        <span class="stage-title">Security review and write-up<span class="stage-tag">planned</span></span>
+        <span class="stage-body">A proper threat-model pass, then a public research write-up.</span>
+      </div>
+    </div>
+    <p class="roadmap-note">A fuller research write-up is in progress.</p>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="cta-section">
+  <div class="container">
+    <h2 class="cta-h2">Get in touch</h2>
+    <p class="cta-sub">If you'd like to discuss the research, reach out directly.</p>
+  </div>
+</section>
+
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <a href="/" class="footer-logo">Scout<span>.</span></a>
+        <p class="footer-tagline">
+          A personal research project on runtime governance and decision provenance for AI agents,
+          built as an open extension rather than a walled product. A research project by Laud
+          Paul-Gablah.
+        </p>
+      </div>
+      <div class="footer-col">
+        <h4>Explore</h4>
+        <a href="#what">What it is</a>
+        <a href="#benefits">Who it benefits</a>
+        <a href="#how">How it works</a>
+        <a href="#question">The research question</a>
+        <a href="#roadmap">Roadmap</a>
+      </div>
+      <div class="footer-col">
+        <h4>Researcher</h4>
+        <a href="https://github.com/malike2356/scout" target="_blank" rel="noopener">GitHub repo</a>
+        <a href="https://linkedin.com/in/laudpaul" target="_blank" rel="noopener">LinkedIn</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 &middot; Labyrinth Scout research project
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  'use strict';
+
+  var hamburger   = document.getElementById('nav-hamburger');
+  var mobilePanel = document.getElementById('nav-mobile-panel');
+
+  if (hamburger && mobilePanel) {
+    hamburger.addEventListener('click', function () {
+      var isOpen = mobilePanel.classList.contains('open');
+      mobilePanel.classList.toggle('open', !isOpen);
+      hamburger.setAttribute('aria-expanded', String(!isOpen));
+      mobilePanel.setAttribute('aria-hidden', String(isOpen));
+    });
+
+    mobilePanel.querySelectorAll('a').forEach(function (link) {
+      link.addEventListener('click', function () {
+        mobilePanel.classList.remove('open');
+        hamburger.setAttribute('aria-expanded', 'false');
+        mobilePanel.setAttribute('aria-hidden', 'true');
+      });
+    });
+  }
+
+  var nav = document.getElementById('main-nav');
+  if (nav) {
+    window.addEventListener('scroll', function () {
+      nav.style.borderBottomColor = window.scrollY > 20
+        ? 'rgba(255,255,255,0.08)'
+        : 'rgba(255,255,255,0.04)';
+    }, { passive: true });
+  }
+
+  if ('IntersectionObserver' in window) {
+    var targets = document.querySelectorAll('.fade-up');
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+    targets.forEach(function (el) { observer.observe(el); });
+  }
+
+  document.querySelectorAll('.timeline-item').forEach(function (el, i) {
+    el.style.transitionDelay = (i * 90) + 'ms';
+  });
+})();
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+
+(function initDottedSurface() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const container = document.getElementById('dotted-surface');
+  if (!container) return;
+
+  const mobile = window.innerWidth <= 768;
+  const SEPARATION = mobile ? 120 : 150;
+  const AMOUNTX = mobile ? 28 : 40;
+  const AMOUNTY = mobile ? 42 : 60;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.Fog(0x06090f, 2000, 10000);
+
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1, 10000);
+  camera.position.set(0, 355, 1220);
+
+  const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(0x06090f, 0);
+  container.appendChild(renderer.domElement);
+
+  const positions = [];
+  const colors = [];
+  const gR = 22 / 255;
+  const gG = 201 / 255;
+  const gB = 126 / 255;
+
+  for (let ix = 0; ix < AMOUNTX; ix++) {
+    for (let iy = 0; iy < AMOUNTY; iy++) {
+      const x = ix * SEPARATION - (AMOUNTX * SEPARATION) / 2;
+      const z = iy * SEPARATION - (AMOUNTY * SEPARATION) / 2;
+      positions.push(x, 0, z);
+      const mix = 0.55 + Math.random() * 0.45;
+      colors.push(gR * mix, gG * mix, gB * mix);
+    }
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+  const material = new THREE.PointsMaterial({
+    size: mobile ? 6 : 8,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.6,
+    sizeAttenuation: true,
+  });
+
+  const points = new THREE.Points(geometry, material);
+  scene.add(points);
+
+  let count = 0;
+  let animationId = 0;
+  let running = true;
+
+  function animate() {
+    if (!running) return;
+    animationId = requestAnimationFrame(animate);
+
+    const positionAttribute = geometry.attributes.position;
+    const posArr = positionAttribute.array;
+    let i = 0;
+
+    for (let ix = 0; ix < AMOUNTX; ix++) {
+      for (let iy = 0; iy < AMOUNTY; iy++) {
+        const index = i * 3;
+        posArr[index + 1] = Math.sin((ix + count) * 0.3) * 50 + Math.sin((iy + count) * 0.5) * 50;
+        i++;
+      }
+    }
+
+    positionAttribute.needsUpdate = true;
+    renderer.render(scene, camera);
+    count += 0.1;
+  }
+
+  function handleResize() {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      running = false;
+      cancelAnimationFrame(animationId);
+    } else {
+      running = true;
+      animate();
+    }
+  });
+
+  window.addEventListener('resize', handleResize);
+  animate();
+})();
+</script>
+</body>
+</html>

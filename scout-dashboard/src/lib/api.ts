@@ -291,6 +291,13 @@ export const api = {
     return raw.organization as Organization;
   },
 
+  changePassword(payload: { current_password: string; new_password: string }) {
+    return request<{ success: boolean }>('/api/dashboard/account/password', {
+      method: 'PUT',
+      body: payload,
+    });
+  },
+
   keprixStatus() {
     return request<KeprixDashboardStatus>('/api/dashboard/keprix/status');
   },

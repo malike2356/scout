@@ -28,6 +28,38 @@ export default function SettingsPage() {
   const [securityError, setSecurityError] = useState<string | null>(null);
   const [autoKillThreshold, setAutoKillThreshold] = useState('');
   const [requireOnchainIdentity, setRequireOnchainIdentity] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordNotice, setPasswordNotice] = useState<string | null>(null);
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordNotice(null);
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New password and confirmation do not match.');
+      return;
+    }
+    setPasswordBusy(true);
+    try {
+      await api.changePassword({ current_password: currentPassword, new_password: newPassword });
+      setPasswordNotice('Password updated.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (err) {
+      setPasswordError(err instanceof ApiError ? err.message : 'Failed to change password');
+    } finally {
+      setPasswordBusy(false);
+    }
+  }
 
   async function load() {
     setLoading(true);
@@ -176,6 +208,64 @@ export default function SettingsPage() {
                   <dd className="capitalize text-ink">{organization?.subscription_status ?? 'inactive'}</dd>
                 </div>
               </dl>
+            </div>
+
+            <div className="panel px-5 py-4">
+              <h2 className="mb-3 text-sm font-semibold text-ink">Account</h2>
+              <form onSubmit={handleChangePassword} className="flex max-w-sm flex-col gap-3">
+                {passwordError ? (
+                  <div className="rounded-sm border border-danger/30 bg-danger/10 px-3 py-2 text-xs text-danger">
+                    {passwordError}
+                  </div>
+                ) : null}
+                {passwordNotice ? (
+                  <div className="rounded-sm border border-accent/30 bg-accent-soft px-3 py-2 text-xs text-accent">
+                    {passwordNotice}
+                  </div>
+                ) : null}
+                <label className="flex flex-col gap-1 text-sm text-ink-muted">
+                  Current password
+                  <input
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="rounded-sm border border-base-border bg-base-panel px-3 py-1.5 text-ink outline-none focus:border-accent"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-ink-muted">
+                  New password
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="rounded-sm border border-base-border bg-base-panel px-3 py-1.5 text-ink outline-none focus:border-accent"
+                  />
+                </label>
+                <label className="flex flex-col gap-1 text-sm text-ink-muted">
+                  Confirm new password
+                  <input
+                    type="password"
+                    required
+                    minLength={8}
+                    autoComplete="new-password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="rounded-sm border border-base-border bg-base-panel px-3 py-1.5 text-ink outline-none focus:border-accent"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  disabled={passwordBusy}
+                  className="self-start rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-base hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {passwordBusy ? 'Saving...' : 'Change password'}
+                </button>
+              </form>
             </div>
 
             <div className="panel border-danger/20 px-5 py-4">

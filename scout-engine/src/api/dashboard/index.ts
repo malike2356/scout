@@ -521,6 +521,43 @@ dashboardRouter.post('/e2e/set-plan', async (req, res) => {
 });
 
 // ════════════════════════════════════════════
+// Account
+// ════════════════════════════════════════════
+dashboardRouter.put('/account/password', async (req, res) => {
+  try {
+    const dashboardReq = req as DashboardRequest;
+    const userId = dashboardReq.userId!;
+    const { current_password, new_password } = (req.body ?? {}) as Record<string, unknown>;
+
+    if (typeof current_password !== 'string' || typeof new_password !== 'string' || new_password.length < 8) {
+      res.status(400).json({
+        error: 'internal',
+        message: 'current_password is required and new_password must be at least 8 characters.',
+      });
+      return;
+    }
+
+    const user = await db('dashboard_users').where({ id: userId }).first();
+    if (!user) {
+      res.status(404).json({ error: 'not_found', message: 'User not found.' });
+      return;
+    }
+
+    const valid = await bcrypt.compare(current_password, user.password_hash);
+    if (!valid) {
+      res.status(401).json({ error: 'unauthorized', message: 'Current password is incorrect.' });
+      return;
+    }
+
+    const passwordHash = await bcrypt.hash(new_password, 10);
+    await db('dashboard_users').where({ id: userId }).update({ password_hash: passwordHash });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'internal', message: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// ════════════════════════════════════════════
 // Organization
 // ════════════════════════════════════════════
 dashboardRouter.get('/org', (req, res) => {

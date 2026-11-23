@@ -15,6 +15,7 @@ import {
 } from '../../integrations/keprix-connector.js';
 import { suspendAllAgentsForOrg, resumeAllAgentsForOrg, AgentControlError } from '../../control/agent-control.js';
 import { dashboardRepositorySecurityRouter } from './repository-security.js';
+import { dashboardGovernanceRouter } from './governance.js';
 
 export const dashboardRouter: ExpressRouter = Router();
 
@@ -156,6 +157,7 @@ async function attachOrganization(req: Request, res: Response, next: NextFunctio
 dashboardRouter.use(attachOrganization);
 dashboardRouter.use(dashboardKeprixRouter);
 dashboardRouter.use(dashboardRepositorySecurityRouter);
+dashboardRouter.use(dashboardGovernanceRouter);
 
 // ════════════════════════════════════════════
 // Overview

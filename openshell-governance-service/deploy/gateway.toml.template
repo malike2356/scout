@@ -1,0 +1,70 @@
+# Gateway registration for the Scout governance extension service.
+# Append this into the operator's real gateway.toml. Every value below was
+# exercised against a real gateway build in this session (see
+# docs/decisions/ in the scout repo for the captured proof logs); this is
+# not a guess at the shape.
+
+[[openshell.gateway.interceptors]]
+name = "scout-governance"
+# unix:// needs no TLS certificate: the gateway authenticates over it with a
+# minted bearer token instead (see openshell-extension-core's transport.rs).
+# Only valid for interceptors - middleware below must use https://, since
+# sandbox supervisors (not only the gateway) need to reach it.
+grpc_endpoint = "unix:///run/scout/governance-interceptor.sock"
+# Exact JWT audience this service verifies. Must equal SCOUT_INTERCEPTOR_AUDIENCE
+# below, byte for byte - a mismatch fails gateway startup with a named error
+# ("expects audience 'X' but the gateway is configured to mint 'Y'").
+audience = "urn:verlox:scout:governance"
+# The whole governance claim for this registration. A fail-open interceptor
+# is a logging layer, not enforcement - do not change this for a deployment.
+failure_policy = "fail_closed"
+# "exact" is deliberate. The default, "dynamic", only warns when the
+# binding set changes instead of refusing to start.
+binding_policy = "exact"
+# May be shortened by a binding but never extended. 500ms is the platform
+# default; do not raise it without a reason a reviewer can see.
+timeout = "500ms"
+max_response_bytes = 1048576
+max_patches = 32
+
+[[openshell.gateway.interceptors.bindings]]
+rpc = "openshell.v1.OpenShell/CreateSandbox"
+phases = ["modify_operation", "validate", "post_commit"]
+# fail_open overrides the interceptor-level fail_closed above, and is
+# REQUIRED: a real gateway run (prompt 06) refuses a manifest that
+# declares two separate bindings for the same RPC, so post_commit - needed
+# to learn the gateway's real sandbox id for consequence linkage - has to
+# join this binding rather than get its own. The proto's own rule then
+# forces the whole binding to fail_open, not only its post_commit phase:
+# the real, narrow cost is that modify_operation/validate also fail open
+# if Scout becomes unreachable, for this RPC only. AttachSandboxProvider,
+# ExposeService, and DeleteSandbox need the identical treatment - see
+# GRANT_LIFECYCLE_RPCS in src/protocol/describe-interceptor.ts for the
+# full reasoning and sandbox-id-resolution detail. Every other
+# interceptable RPC (VALIDATE_ONLY_RPCS) keeps a plain
+# phases = ["validate"] binding with no failure_policy override, inheriting
+# fail_closed from the interceptor level above.
+failure_policy = "fail_open"
+
+[openshell.supervisor]
+
+[[openshell.supervisor.middleware]]
+name = "scout-governance"
+grpc_endpoint = "https://127.0.0.1:18082"
+# PEM trust-root the gateway uses to verify this service's TLS certificate.
+# A self-signed leaf cert can serve as its own CA entry here for local/dev
+# deployments; a real deployment should use an operator-managed CA.
+tls_ca_cert_path = "/etc/verlox/scout-middleware-ca.pem"
+# Exact JWT audience; must equal SCOUT_MIDDLEWARE_AUDIENCE. Left unset, this
+# defaults to "urn:openshell:extension:middleware:<name>" - set it
+# explicitly here anyway so the value is visible in one place.
+audience = "urn:openshell:extension:middleware:scout-governance"
+# Must not exceed 4 MiB and must not exceed what Describe advertises.
+max_payload_bytes = 262144
+timeout = "500ms"
+
+# For local development only: an insecure-transport opt-out exists
+# (allow_insecure_transport = true) that permits plaintext http:// and
+# disables the bearer-token handshake entirely. It must never appear in a
+# template that could reach a real deployment, so it is deliberately not
+# shown above - add it only on a throwaway local gateway.toml, never here.

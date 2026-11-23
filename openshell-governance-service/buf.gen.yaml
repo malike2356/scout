@@ -1,0 +1,21 @@
+# Code generation for the Scout OpenShell governance extension service.
+# Adapted from _vendor/OpenShell/sdk/typescript/buf.gen.yaml. `proto` is a
+# symlink to ../_vendor/OpenShell/proto (vendored by reference, never copied).
+version: v2
+clean: true
+inputs:
+  - directory: proto
+    paths:
+      - proto/extension.proto
+      - proto/gateway_interceptor.proto
+      - proto/supervisor_middleware.proto
+      - proto/openshell.proto
+      - proto/datamodel.proto
+      - proto/options.proto
+      - proto/sandbox.proto
+plugins:
+  - local: ./node_modules/.bin/protoc-gen-es
+    out: src/gen
+    opt:
+      - target=ts
+      - import_extension=js

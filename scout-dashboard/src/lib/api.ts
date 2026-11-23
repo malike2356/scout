@@ -15,6 +15,13 @@ import type {
   RepoSecretScanRun,
   RepoSecurityOverview,
   RepoSecuritySettings,
+  BoundaryDecision,
+  BoundaryGrant,
+  GrantObservation,
+  PolicyProvenanceEvent,
+  PolicyProvenanceChain,
+  GovernanceGaps,
+  GovernanceHealth,
 } from './types';
 
 export const API_BASE =
@@ -393,6 +400,70 @@ export const api = {
       method: 'PUT',
       body: payload,
     });
+  },
+
+  // OpenShell governance extension - see scout-engine/src/api/dashboard/governance.ts.
+  governanceHealth() {
+    return request<GovernanceHealth>('/api/dashboard/governance/health');
+  },
+
+  governanceDecisions(params: { verdict?: string; rpc?: string; subject?: string; limit?: number; offset?: number } = {}) {
+    const qs = new URLSearchParams();
+    if (params.verdict) qs.set('verdict', params.verdict);
+    if (params.rpc) qs.set('rpc', params.rpc);
+    if (params.subject) qs.set('subject', params.subject);
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    if (params.offset != null) qs.set('offset', String(params.offset));
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return request<{ decisions: BoundaryDecision[]; limit: number; offset: number }>(
+      `/api/dashboard/governance/decisions${suffix}`,
+    );
+  },
+
+  governanceDecision(uid: string) {
+    return request<{ decision: BoundaryDecision; provenance: PolicyProvenanceEvent[] }>(
+      `/api/dashboard/governance/decisions/${encodeURIComponent(uid)}`,
+    );
+  },
+
+  governanceDecisionActivity(uid: string) {
+    return request<{ decisionUid: string; grants: BoundaryGrant[]; observations: GrantObservation[] }>(
+      `/api/dashboard/governance/decisions/${encodeURIComponent(uid)}/activity`,
+    );
+  },
+
+  governanceGrants(params: { open?: boolean; sandboxId?: string; limit?: number; offset?: number } = {}) {
+    const qs = new URLSearchParams();
+    if (params.open != null) qs.set('open', String(params.open));
+    if (params.sandboxId) qs.set('sandboxId', params.sandboxId);
+    if (params.limit != null) qs.set('limit', String(params.limit));
+    if (params.offset != null) qs.set('offset', String(params.offset));
+    const suffix = qs.toString() ? `?${qs.toString()}` : '';
+    return request<{ grants: BoundaryGrant[]; limit: number; offset: number }>(
+      `/api/dashboard/governance/grants${suffix}`,
+    );
+  },
+
+  revokeGovernanceGrant(id: string, note: string) {
+    return request<{ ok: boolean; grant?: BoundaryGrant; error?: string; liveCapabilityDetachAttempted?: boolean }>(
+      `/api/dashboard/governance/grants/${encodeURIComponent(id)}/revoke`,
+      { method: 'POST', body: { note } },
+    );
+  },
+
+  governanceInverse(payload: { host: string; from: string; to: string; tenant?: string }) {
+    return request<{ grants: BoundaryGrant[]; permittingDecisions: string[] }>(
+      '/api/dashboard/governance/inverse',
+      { method: 'POST', body: payload },
+    );
+  },
+
+  governanceGaps() {
+    return request<GovernanceGaps>('/api/dashboard/governance/gaps');
+  },
+
+  governancePolicies() {
+    return request<{ policies: PolicyProvenanceChain[] }>('/api/dashboard/governance/policies');
   },
 };
 

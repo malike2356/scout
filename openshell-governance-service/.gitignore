@@ -1,0 +1,6 @@
+# Generated protobuf stubs (src/gen/) ARE committed, despite being a build
+# output: the vendored OpenShell proto source (_vendor/OpenShell) is
+# deliberately kept out of this public repo (see .git/info/exclude), so
+# without committing the stubs a fresh clone could never regenerate them
+# and the service would not build. Regenerate locally with `npm run gen`
+# if the upstream proto schema changes, and commit the result.

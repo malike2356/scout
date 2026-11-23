@@ -236,3 +236,131 @@ export interface RepoSecuritySettings {
   path_display_policy: 'relative' | 'basename' | string;
   commit_display_policy: 'allow' | 'omit' | string;
 }
+
+// OpenShell governance extension (openshell-governance-service, proxied
+// through scout-engine's /api/dashboard/governance/* behind the same
+// dashboard login). Field names below are intentionally mixed case: rows
+// selected straight off Postgres (BoundaryDecision, BoundaryGrant,
+// GrantObservation, PolicyProvenanceEvent) are snake_case because the
+// service forwards `pool.query` rows as-is; the health/gaps/policy-chain
+// summaries are camelCase because those handlers build plain objects by
+// hand. This matches openshell-governance-service/src/{evidence,linkage}/http.ts
+// and src/health.ts exactly - do not "normalize" one style without
+// re-checking those handlers.
+export type GovernanceVerdict = 'allow' | 'deny' | string;
+
+export interface BoundaryDecision {
+  decision_uid: string;
+  correlation_id: string | null;
+  occurred_at: string;
+  layer: 'control' | 'data' | string;
+  rpc: string;
+  phase: string | null;
+  tenant_id: string;
+  workspace_id: string | null;
+  sandbox_id: string | null;
+  subject_label: string | null;
+  verdict: GovernanceVerdict;
+  rule_id: string | null;
+  reason: string;
+  policy_slug: string;
+  policy_version: number;
+  policy_digest: string;
+  authority_kind: string;
+  authority_ref: string | null;
+  residual_risk: string | null;
+  latency_us: number | null;
+  evaluation_mode: string;
+  service_version: string;
+}
+
+export interface PolicyProvenanceEvent {
+  event: 'authored' | 'signed' | 'activated' | 'superseded' | 'revoked' | string;
+  actor: string;
+  actor_kind: 'human' | 'agent' | 'system' | string;
+  signature_subject: string | null;
+  note: string | null;
+  occurred_at: string;
+}
+
+export interface BoundaryGrant {
+  id: string;
+  decision_uid: string;
+  tenant_id: string;
+  sandbox_id: string;
+  capability: string;
+  policy_digest: string;
+  effective_from: string;
+  effective_to: string | null;
+  closed_reason: 'sandbox_ended' | 'policy_superseded' | 'revoked' | null;
+}
+
+export interface GrantObservation {
+  grant_id?: string;
+  observed_at: string;
+  kind: 'outbound_call' | 'data_egress' | 'credential_use' | 'policy_change' | string;
+  destination_host: string | null;
+  outcome: 'succeeded' | 'denied' | 'errored' | string;
+  byte_count: number | null;
+  detail: Record<string, unknown> | null;
+}
+
+export interface PolicyProvenanceChain {
+  policyDigest: string;
+  policySlug: string | null;
+  version: number | null;
+  events: PolicyProvenanceEvent[];
+}
+
+export interface GovernanceGaps {
+  decisionsWithoutGrants: Array<{
+    decision_uid: string;
+    rpc: string;
+    phase: string | null;
+    sandbox_id: string | null;
+    occurred_at: string;
+  }>;
+  decisionsWithoutGrantsCount: number;
+  grantsWithoutObservations: Array<{
+    id: string;
+    sandbox_id: string;
+    capability: string;
+    effective_from: string;
+    effective_to: string | null;
+    closed_reason: string | null;
+  }>;
+  grantsWithoutObservationsCount: number;
+}
+
+export interface GovernanceHealth {
+  evidence: {
+    queueDepth: number;
+    oldestQueuedAgeMs: number | null;
+    drainLagMs: number | null;
+    lastDrainAt: string | null;
+    decisionsWrittenTotal: number;
+    writeFailuresTotal: number;
+    deadLetterTotal: number;
+    droppedDueToFullBufferTotal: number;
+    refusedIncompleteTotal: number;
+  };
+  linkage: {
+    queueDepth: number;
+    lastDrainAt: string | null;
+    drainLagMs: number | null;
+    grantsOpenedTotal: number;
+    grantsClosedTotal: number;
+    observationsWrittenTotal: number;
+    observationsUnattributedTotal: number;
+    grantOpenSkippedUnresolvedSandboxTotal: number;
+  };
+  policy: {
+    loadedAt: string;
+    policyCount: number;
+    bindingCount: number;
+    digests: Array<{ policySlug: string; version: number; digestSha256: string }>;
+    lastReloadAttemptAt: string | null;
+    lastSuccessfulReloadAt: string | null;
+    lastReloadError: string | null;
+  };
+}

@@ -23,6 +23,7 @@ services:
       DB_PASSWORD: ${SCOUT_DB_PASSWORD:-scout}
       DB_NAME: scout
       DASHBOARD_ORIGIN: ${DASHBOARD_ORIGIN:-https://console.labyrinthscout.com}
+      SCOUT_GOVERNANCE_API_URL: http://scout-saas-governance:18080
     depends_on:
       scout-saas-postgres:
         condition: service_healthy
@@ -90,6 +91,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+    restart: unless-stopped
+
+  # OpenShell governance extension (openshell-governance-service/). Internal
+  # only - not on the `proxy` network. scout-saas-engine reaches it at
+  # SCOUT_GOVERNANCE_API_URL and is the only thing in front of it with a
+  # login (see scout-engine/src/api/dashboard/governance.ts). The middleware
+  # TLS listener (18082) is never reached from outside this compose network,
+  # so the mounted cert only needs to exist and parse - it is not serving
+  # real public traffic.
+  scout-saas-governance:
+    build:
+      context: ./openshell-governance-service
+      dockerfile: Dockerfile
+    container_name: scout-saas-governance
+    environment:
+      SCOUT_POLICY_DATABASE_URL: postgresql://scout:${SCOUT_DB_PASSWORD:-scout}@scout-saas-postgres:5432/scout_governance
+      SCOUT_MIDDLEWARE_TLS_CERT_PATH: /etc/scout-governance/tls/cert.pem
+      SCOUT_MIDDLEWARE_TLS_KEY_PATH: /etc/scout-governance/tls/key.pem
+    volumes:
+      - ./deploy/scout-governance-tls:/etc/scout-governance/tls:ro
+    depends_on:
+      scout-saas-postgres:
+        condition: service_healthy
+    networks:
+      - scout-saas
+    expose:
+      - "18080"
     restart: unless-stopped
 
 networks:
